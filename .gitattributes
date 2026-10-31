@@ -1,0 +1,6 @@
+# 源码统一用 LF 存进仓库；Windows 批处理必须是 CRLF；gradlew 是 shell 脚本，在 Linux/macOS 上必须是 LF
+* text=auto
+*.sh text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">碰碰娃</string>
+
+    <!-- 底部导航 -->
+    <string name="tab_me">名片</string>
+    <string name="tab_contacts">集邮册</string>
+    <string name="tab_lab">实验室</string>
+
+    <!-- 身份 -->
+    <string name="setup_title">给自己起个名字</string>
+    <string name="setup_hint">别人碰到你时会看到这个名字，之后可以随时修改。</string>
+    <string name="display_name_label">显示名</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="edit_name">修改显示名</string>
+    <string name="my_id_label">我的 ID</string>
+
+    <string name="name_error_empty">名字不能为空</string>
+    <string name="name_error_too_long">名字太长了（最多约 10 个汉字）</string>
+    <string name="name_error_invalid_char">名字里有不支持的字符（换行、零宽字符等）</string>
+
+    <!-- 集邮册 -->
+    <string name="contacts_empty">还没有碰到过娃友\n碰一碰，就会出现在这里</string>
+    <plurals name="contact_met_summary">
+        <item quantity="other">遇见 %1$d 次 · 最近 %2$s</item>
+    </plurals>
+
+    <!-- 实验室（仅调试版） -->
+    <string name="lab_title">实验室（仅调试版）</string>
+    <string name="lab_ble">蓝牙交换</string>
+    <string name="ble_start_advertise">开始广播</string>
+    <string name="ble_stop_advertise">停止广播</string>
+    <string name="ble_start_scan">开始扫描</string>
+    <string name="ble_stop_scan">停止扫描</string>
+    <string name="ble_log_empty">（暂无日志）</string>
+    <string name="lab_demo_data">测试数据</string>
+    <string name="lab_add_demo">添加 5 条假名片</string>
+
+    <!-- 相机 -->
+    <string name="camera_button">拍照</string>
+    <string name="photo_saved">已保存到相册 · Pictures/PengWa</string>
+    <string name="photo_create_failed">无法创建照片文件</string>
+    <string name="camera_not_found">没有找到相机应用</string>
+
+    <!-- NFC 与相遇 -->
+    <string name="nfc_ready">停留在本页，和另一台手机背靠背碰一下\n离开本页后，别人的手机就读不到你的名片</string>
+    <string name="nfc_unsupported">此设备不支持 NFC</string>
+    <string name="nfc_disabled">NFC 未开启</string>
+    <string name="nfc_open_settings">去开启</string>
+    <string name="meeting_snackbar">碰到了 %1$s</string>
+    <string name="hce_service_description">碰碰娃名片</string>
+    <string name="hce_aid_group_description">两边都装了碰碰娃时，碰一下互换名片</string>
+    <string name="hce_tag_group_description">名片页打开时，让其他手机把我当作一张名片标签读取</string>
+
+    <!-- 常驻通知开关 -->
+    <string name="notif_setting_title">常驻通知</string>
+    <string name="notif_setting_desc">在通知栏显示我的名片，一键进入名片和集邮册</string>
+    <string name="notif_permission_needed">需要允许通知权限才能显示</string>
+    <string name="notif_open_settings">去系统设置</string>
+
+    <!-- 通知栏 -->
+    <string name="notif_channel_name">常驻名片</string>
+    <string name="notif_channel_desc">在通知栏显示我的名片，并提供快捷入口</string>
+    <string name="notif_id_format">ID %1$s</string>
+    <string name="notif_hint">点下面的按钮快速进入</string>
+    <string name="notif_btn_me">我的名片</string>
+    <string name="notif_btn_contacts">集邮册</string>
+</resources>

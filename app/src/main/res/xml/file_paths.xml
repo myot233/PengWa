@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只共享缓存目录下的 camera/ 子目录，用于把相机的输出位置临时授权给系统相机 -->
+<paths>
+    <cache-path
+        name="camera"
+        path="camera/" />
+</paths>
