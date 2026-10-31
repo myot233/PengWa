@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.pengwa.R
+import app.pengwa.ble.BroadcastSettings
 import app.pengwa.notification.PengWaNotification
 
 /**
@@ -53,6 +54,13 @@ fun NotificationToggle(modifier: Modifier = Modifier) {
         onPauseOrDispose { }
     }
 
+    // 后台蓝牙广播开着时，这条通知就是前台服务的通知，不能关：开关锁定为开
+    var forcedByBroadcast by remember { mutableStateOf(BroadcastSettings.isEnabled(context)) }
+    DisposableEffect(context) {
+        val stopObserving = BroadcastSettings.observe(context) { forcedByBroadcast = it }
+        onDispose(stopObserving)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permitted = granted
         denied = !granted
@@ -64,13 +72,14 @@ fun NotificationToggle(modifier: Modifier = Modifier) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.notif_setting_title), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    text = stringResource(R.string.notif_setting_desc),
+                    text = stringResource(if (forcedByBroadcast) R.string.notif_forced_by_broadcast else R.string.notif_setting_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Switch(
-                checked = wanted && permitted,
+                checked = forcedByBroadcast || (wanted && permitted),
+                enabled = !forcedByBroadcast,
                 onCheckedChange = { turnOn ->
                     when {
                         !turnOn -> PengWaNotification.setEnabled(context, false)

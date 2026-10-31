@@ -64,6 +64,8 @@ object ApduProtocol {
 class ApduHandler(
     private val identityProvider: () -> Identity?,
     private val onPeer: (Identity) -> Unit,
+    /** 为 false 时不响应：主页没有停在 NFC 页的时候，别人碰不到我。 */
+    private val armed: () -> Boolean = { true },
 ) {
     private var selected = false
 
@@ -81,7 +83,7 @@ class ApduHandler(
 
     private fun handleSelect(command: ByteArray): ByteArray {
         val aid = ApduProtocol.commandData(command)
-        return if (aid != null && aid.contentEquals(ApduProtocol.AID)) {
+        return if (aid != null && aid.contentEquals(ApduProtocol.AID) && armed()) {
             selected = true
             ApduProtocol.SW_OK
         } else {

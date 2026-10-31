@@ -167,21 +167,3 @@ class CardRouter(
         }
     }
 }
-
-/**
- * "展示名片"开关：只有名片页在前台时才为 true，此时别人的手机才能把我们当 NDEF 标签读到。
- * 离开页面、退到后台、进程被杀都会回到 false。服务与界面在同一进程，用 volatile 即可。
- */
-class TagShareGate {
-    @Volatile
-    var armed: Boolean = false
-        private set
-
-    fun arm() {
-        armed = true
-    }
-
-    fun disarm() {
-        armed = false
-    }
-}

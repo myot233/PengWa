@@ -24,6 +24,17 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <!-- 扫码需要相机；没有相机的设备仍可安装。
+         注意：声明了 CAMERA 之后，用系统相机拍照（ACTION_IMAGE_CAPTURE）前本应用也必须已获得该权限，
+         所以拍照按钮和扫码都会在需要时先请求。 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
     <!-- NFC 碰一碰：没有 NFC / 卡模拟的设备仍可安装，只是用不了该功能 -->
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature
@@ -32,6 +43,11 @@
     <uses-feature
         android:name="android.hardware.nfc.hce"
         android:required="false" />
+
+    <!-- 后台蓝牙广播：靠前台服务保活。Android 14+ 要求同时声明服务类型对应的权限；
+         connectedDevice 类型还要求已获得蓝牙广播/连接权限，上面已经声明 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
     <!-- Android 13+ 发通知需要运行时授权 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -57,6 +73,17 @@
         <receiver
             android:name=".notification.NotificationDismissReceiver"
             android:exported="false" />
+
+        <!-- 通知上"同意 / 拒绝交换申请"按钮的处理 -->
+        <receiver
+            android:name=".notification.RequestActionReceiver"
+            android:exported="false" />
+
+        <!-- 后台蓝牙广播：前台服务，类型 connectedDevice（与蓝牙外设交互） -->
+        <service
+            android:name=".ble.BleBroadcastService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
 
         <!-- NFC 卡模拟：被对方碰到时由系统拉起 -->
         <service

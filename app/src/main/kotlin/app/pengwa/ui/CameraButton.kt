@@ -1,5 +1,6 @@
 package app.pengwa.ui
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,6 +26,8 @@ import kotlinx.coroutines.withContext
 /**
  * 调用系统相机拍照，整张原图由相机应用直接写进临时文件，拍成功后原样复制进相册，不经过任何压缩。
  * 画质（像素、HDR、夜景）完全由系统相机的设置决定。
+ *
+ * 因为应用声明了 CAMERA 权限（扫码用），系统要求调用系统相机前本应用也必须已获得该权限，所以这里先申请。
  */
 @Composable
 fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -33,7 +36,7 @@ fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
     // 相机在前台时本应用可能被系统回收；保存临时文件路径，回来后才能收尾
     var pendingPath by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
         Log.i("PengWaPhoto", "相机返回 taken=$taken file=$pendingPath")
         val file = pendingPath?.let(::File) ?: return@rememberLauncherForActivityResult
         pendingPath = null
@@ -47,18 +50,26 @@ fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
         }
     }
 
+    fun launchCamera() {
+        val file = PhotoStorage.newCaptureFile(context)
+        pendingPath = file.absolutePath
+        try {
+            takePicture.launch(PhotoStorage.uriFor(context, file))
+        } catch (_: ActivityNotFoundException) {
+            pendingPath = null
+            PhotoStorage.discard(file)
+            onMessage(context.getString(R.string.camera_not_found))
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) launchCamera() else onMessage(context.getString(R.string.camera_permission_denied))
+    }
+
     ExtendedFloatingActionButton(
         modifier = modifier,
         onClick = {
-            val file = PhotoStorage.newCaptureFile(context)
-            pendingPath = file.absolutePath
-            try {
-                launcher.launch(PhotoStorage.uriFor(context, file))
-            } catch (_: ActivityNotFoundException) {
-                pendingPath = null
-                PhotoStorage.discard(file)
-                onMessage(context.getString(R.string.camera_not_found))
-            }
+            if (hasCameraPermission(context)) launchCamera() else permissionLauncher.launch(Manifest.permission.CAMERA)
         },
         icon = { Text("📷") },
         text = { Text(stringResource(R.string.camera_button)) },

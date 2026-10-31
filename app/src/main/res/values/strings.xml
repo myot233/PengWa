@@ -3,7 +3,7 @@
     <string name="app_name">碰碰娃</string>
 
     <!-- 底部导航 -->
-    <string name="tab_me">名片</string>
+    <string name="tab_me">主页</string>
     <string name="tab_contacts">集邮册</string>
     <string name="tab_lab">实验室</string>
 
@@ -14,7 +14,15 @@
     <string name="save">保存</string>
     <string name="cancel">取消</string>
     <string name="edit_name">修改显示名</string>
-    <string name="my_id_label">我的 ID</string>
+
+    <!-- 主页 -->
+    <string name="home_id_short">ID %1$s</string>
+    <string name="home_edit">改名</string>
+    <string name="home_settings">设置</string>
+    <string name="settings_title">设置</string>
+    <string name="page_nfc">NFC</string>
+    <string name="page_bluetooth">蓝牙</string>
+    <string name="page_qr">二维码</string>
 
     <string name="name_error_empty">名字不能为空</string>
     <string name="name_error_too_long">名字太长了（最多约 10 个汉字）</string>
@@ -29,22 +37,29 @@
     <!-- 实验室（仅调试版） -->
     <string name="lab_title">实验室（仅调试版）</string>
     <string name="lab_ble">蓝牙交换</string>
-    <string name="ble_start_advertise">开始广播</string>
-    <string name="ble_stop_advertise">停止广播</string>
-    <string name="ble_start_scan">开始扫描</string>
-    <string name="ble_stop_scan">停止扫描</string>
+    <string name="lab_ble_status">状态：%1$s · 系统蓝牙%2$s</string>
+    <string name="lab_running">运行中</string>
+    <string name="lab_stopped">未运行</string>
+    <string name="lab_on">已开</string>
+    <string name="lab_off">未开</string>
     <string name="ble_log_empty">（暂无日志）</string>
     <string name="lab_demo_data">测试数据</string>
     <string name="lab_add_demo">添加 5 条假名片</string>
+    <string name="lab_simulate_request">5 秒后模拟收到一个交换申请</string>
 
     <!-- 相机 -->
     <string name="camera_button">拍照</string>
     <string name="photo_saved">已保存到相册 · Pictures/PengWa</string>
     <string name="photo_create_failed">无法创建照片文件</string>
     <string name="camera_not_found">没有找到相机应用</string>
+    <string name="camera_permission_needed">需要相机权限才能使用</string>
+    <string name="camera_permission_denied">没有相机权限，无法拍照</string>
+    <string name="camera_grant">允许使用相机</string>
 
     <!-- NFC 与相遇 -->
-    <string name="nfc_ready">停留在本页，和另一台手机背靠背碰一下\n离开本页后，别人的手机就读不到你的名片</string>
+    <string name="nfc_page_title">碰一碰</string>
+    <string name="nfc_page_hint">停留在本页，别人才能碰到你；滑走就关闭。\n对方装了碰碰娃、没打开时，也会被自动拉起。</string>
+    <string name="nfc_ready">和另一台手机背靠背碰一下\n对方也切到本页最稳</string>
     <string name="nfc_unsupported">此设备不支持 NFC</string>
     <string name="nfc_disabled">NFC 未开启</string>
     <string name="nfc_open_settings">去开启</string>
@@ -53,9 +68,53 @@
     <string name="hce_aid_group_description">两边都装了碰碰娃时，碰一下互换名片</string>
     <string name="hce_tag_group_description">名片页打开时，让其他手机把我当作一张名片标签读取</string>
 
+    <!-- 蓝牙页 -->
+    <string name="bt_permission_intro">蓝牙交换需要“附近的设备”权限，才能发现附近的碰碰娃</string>
+    <string name="bt_permission_needed">没有“附近的设备”权限，无法发现附近的碰碰娃</string>
+    <string name="bt_grant">允许</string>
+    <string name="bt_open_app_settings">去系统设置</string>
+    <string name="bt_off">系统蓝牙未开启</string>
+    <string name="bt_turn_on">开启蓝牙</string>
+    <string name="bt_searching">正在搜索附近的碰碰娃…\n让对方也切到“蓝牙”页</string>
+    <string name="bt_nearby_title">附近的碰碰娃（%1$d）· 点一下向对方申请，对方同意后才会交换</string>
+    <string name="bt_peer_unknown">附近的碰碰娃</string>
+    <string name="bt_reading_name">正在识别…</string>
+    <string name="bt_signal_strong">信号强</string>
+    <string name="bt_signal_medium">信号中</string>
+    <string name="bt_signal_weak">信号弱</string>
+    <string name="bt_request">申请交换</string>
+    <string name="bt_requesting">正在发出申请…</string>
+    <string name="bt_waiting">等待对方同意…</string>
+    <string name="bt_done">✓ 已交换</string>
+    <string name="bt_retry">重试</string>
+    <string name="bt_failed">交换失败</string>
+
+    <!-- 收到交换申请（蓝牙需要被申请的一方同意；NFC 和二维码不需要） -->
+    <string name="request_title">%1$s 想和你交换名片</string>
+    <string name="request_body">对方在附近，通过蓝牙向你申请交换（ID %1$s）。\n同意后你们会互相收到对方的名片。</string>
+    <string name="request_notif_text">来自附近的蓝牙 · 同意后才会交换</string>
+    <string name="request_accept">同意</string>
+    <string name="request_decline">拒绝</string>
+    <string name="request_channel_name">交换申请</string>
+    <string name="request_channel_desc">有人通过蓝牙向你申请交换名片时提醒你</string>
+
+    <!-- 设置：后台蓝牙广播 -->
+    <string name="bg_setting_title">后台蓝牙广播</string>
+    <string name="bg_setting_desc">打开后，即使没打开碰碰娃，附近的人也能发现你并向你申请交换，你同意后才会交换。会在通知栏常驻一条通知；附近的人能看到你的显示名。</string>
+    <string name="bg_permission_needed">需要“附近的设备”和“通知”权限，才能在后台广播并提醒你</string>
+    <string name="bg_running">已开启 · 正在后台广播，有人申请时会通知你</string>
+
+    <!-- 二维码页 -->
+    <string name="qr_hint">让对方用碰碰娃扫一扫</string>
+    <string name="qr_scan">扫一扫</string>
+    <string name="qr_scan_hint">把对方的二维码放进取景框</string>
+    <string name="qr_close">关闭</string>
+    <string name="qr_invalid">这不是碰碰娃的二维码</string>
+    <string name="qr_self_or_duplicate">这是你自己的二维码，或刚刚已经扫过</string>
+
     <!-- 常驻通知开关 -->
     <string name="notif_setting_title">常驻通知</string>
-    <string name="notif_setting_desc">在通知栏显示我的名片，一键进入名片和集邮册</string>
+    <string name="notif_setting_desc">在通知栏显示我的名片，一键进入主页和集邮册</string>
     <string name="notif_permission_needed">需要允许通知权限才能显示</string>
     <string name="notif_open_settings">去系统设置</string>
 
@@ -64,6 +123,9 @@
     <string name="notif_channel_desc">在通知栏显示我的名片，并提供快捷入口</string>
     <string name="notif_id_format">ID %1$s</string>
     <string name="notif_hint">点下面的按钮快速进入</string>
-    <string name="notif_btn_me">我的名片</string>
+    <string name="notif_id_broadcasting">ID %1$s · 蓝牙广播中</string>
+    <string name="notif_hint_broadcasting">蓝牙广播中：附近的人可以向你申请交换，你同意后才会交换</string>
+    <string name="notif_forced_by_broadcast">后台蓝牙广播开着时，这条通知必须常驻</string>
+    <string name="notif_btn_me">主页</string>
     <string name="notif_btn_contacts">集邮册</string>
 </resources>

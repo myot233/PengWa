@@ -105,6 +105,37 @@ class ApduProtocolTest {
         assertContentEquals(ApduProtocol.SW_CLA_NOT_SUPPORTED, handler.process(byteArrayOf(0x55, 0x01, 0x00, 0x00)))
     }
 
+    // ------------------------------------------------------------ 模式开关：不在 NFC 页别人就碰不到我
+
+    @Test
+    fun `没停在 NFC 页时私有协议不响应 返回文件未找到`() {
+        val handler = ApduHandler(identityProvider = { alice }, onPeer = { }, armed = { false })
+        assertContentEquals(ApduProtocol.SW_FILE_NOT_FOUND, handler.process(ApduProtocol.selectCommand()))
+    }
+
+    @Test
+    fun `没停在 NFC 页时发起方碰过去得到 NotCompatible`() {
+        val handler = ApduHandler(identityProvider = { alice }, onPeer = { }, armed = { false })
+        assertEquals(ExchangeResult.NotCompatible, runInitiator(bob) { handler.process(it) })
+    }
+
+    @Test
+    fun `没停在 NFC 页时不会记录对方 也不会交出我的名片`() {
+        val received = mutableListOf<Identity>()
+        val handler = ApduHandler(identityProvider = { alice }, onPeer = { received += it }, armed = { false })
+        runInitiator(bob) { handler.process(it) }
+        assertTrue(received.isEmpty())
+    }
+
+    @Test
+    fun `切回 NFC 页后恢复响应`() {
+        var armed = false
+        val handler = ApduHandler(identityProvider = { alice }, onPeer = { }, armed = { armed })
+        assertEquals(ExchangeResult.NotCompatible, runInitiator(bob) { handler.process(it) })
+        armed = true
+        assertEquals(ExchangeResult.Peer(alice), runInitiator(bob) { handler.process(it) })
+    }
+
     // ------------------------------------------------------------ 两端对接：一次完整的碰触
 
     @Test

@@ -22,4 +22,16 @@ object BlePermissions {
     fun granted(context: Context): Boolean = required().all {
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
+
+    /** 只广播（后台被动等别人来申请）不需要扫描权限：Android 12+ 只要广播和连接两项。 */
+    fun requiredForBroadcast(): Array<String> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT)
+        } else {
+            emptyArray()
+        }
+
+    fun grantedForBroadcast(context: Context): Boolean = requiredForBroadcast().all {
+        ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+    }
 }

@@ -1,0 +1,28 @@
+package app.pengwa.exchange
+
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * 主页当前停留在哪一种交换方式。**滑到哪个就只用哪个**：其余方式一律关闭。
+ * [None] 表示不在主页（切到别的页、退到后台、息屏、正在改名），此时所有交换方式都不工作。
+ */
+enum class ExchangeMode { None, Nfc, Bluetooth, Qr }
+
+/**
+ * 当前交换方式的全应用共享状态。界面写入，NFC 服务、蓝牙总控、前台调度读取。
+ * HCE 服务来自系统线程，所以读取用 [current]（volatile 语义由 StateFlow 保证）。
+ */
+class ExchangeModeState {
+    private val _mode = MutableStateFlow(ExchangeMode.None)
+    val mode: StateFlow<ExchangeMode> = _mode.asStateFlow()
+
+    val current: ExchangeMode get() = _mode.value
+
+    fun set(mode: ExchangeMode) {
+        _mode.value = mode
+    }
+
+    fun isActive(mode: ExchangeMode): Boolean = _mode.value == mode
+}

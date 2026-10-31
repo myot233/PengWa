@@ -4,12 +4,14 @@ import android.content.pm.ApplicationInfo
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +25,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.pengwa.MainActivity
 import app.pengwa.R
@@ -31,7 +33,7 @@ import app.pengwa.pengWa
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-/** 底部导航三页：名片 / 集邮册 / 实验室（仅调试版）。导航结构简单，不引入 Navigation 库。 */
+/** 底部导航三页：主页 / 集邮册 / 实验室（仅调试版）。导航结构简单，不引入 Navigation 库。 */
 @Composable
 fun PengWaRoot(
     requestedTab: Int?,
@@ -49,6 +51,8 @@ fun PengWaRoot(
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
     var selectedTab by rememberSaveable { mutableIntStateOf(MainActivity.TAB_ME) }
+    // 记住主页停在 NFC / 蓝牙 / 二维码哪一页，切到别的底部页再回来时保持原位
+    var homePage by rememberSaveable { mutableIntStateOf(PAGE_NFC) }
 
     // 通知栏按钮要求切换到某一页
     LaunchedEffect(requestedTab) {
@@ -58,7 +62,7 @@ fun PengWaRoot(
         }
     }
 
-    // 碰到人了（NFC 或蓝牙）：震一下并提示。新事件会顶掉还没消失的旧提示。
+    // 碰到人了（NFC、蓝牙或二维码）：震一下并提示。新事件会顶掉还没消失的旧提示。
     LaunchedEffect(Unit) {
         context.pengWa.meetings.events.collectLatest { event ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -66,16 +70,30 @@ fun PengWaRoot(
         }
     }
 
+    // 有人通过蓝牙向我申请交换：必须我同意才会交换。应用在前台时弹对话框，在后台时是带按钮的通知
+    val controller = remember { context.pengWa.bleExchange }
+    val incoming by controller.incoming.collectAsStateWithLifecycle()
+    incoming.firstOrNull()?.let { request ->
+        AlertDialog(
+            // 点对话框外面或返回键不算决定：必须明确选"同意"或"拒绝"
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.request_title, request.peer.displayName)) },
+            text = { Text(stringResource(R.string.request_body, request.peer.id.toString().take(8))) },
+            confirmButton = {
+                TextButton(onClick = { controller.respond(request.key, accept = true) }) {
+                    Text(stringResource(R.string.request_accept))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { controller.respond(request.key, accept = false) }) {
+                    Text(stringResource(R.string.request_decline))
+                }
+            },
+        )
+    }
+
     // 还没设置显示名时，只显示首次设置页，不展示底部导航
     val hasIdentity = identityViewModel.identity != null
-
-    // "展示名片"：只有名片页在前台时，别人的手机才能把我们当 NDEF 标签读到；
-    // 切到别的页、退到后台、息屏都会立刻关闭。
-    val tagShareGate = context.pengWa.tagShareGate
-    LifecycleResumeEffect(selectedTab, hasIdentity) {
-        if (hasIdentity && selectedTab == MainActivity.TAB_ME) tagShareGate.arm()
-        onPauseOrDispose { tagShareGate.disarm() }
-    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -83,7 +101,7 @@ fun PengWaRoot(
         bottomBar = {
             if (hasIdentity) {
                 NavigationBar {
-                    TabItem(MainActivity.TAB_ME, "🪪", R.string.tab_me, selectedTab) { selectedTab = it }
+                    TabItem(MainActivity.TAB_ME, "🏠", R.string.tab_me, selectedTab) { selectedTab = it }
                     TabItem(MainActivity.TAB_CONTACTS, "📖", R.string.tab_contacts, selectedTab) { selectedTab = it }
                     if (debuggable) {
                         TabItem(MainActivity.TAB_LAB, "🧪", R.string.tab_lab, selectedTab) { selectedTab = it }
@@ -94,8 +112,13 @@ fun PengWaRoot(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding)
         when {
-            !hasIdentity || selectedTab == MainActivity.TAB_ME ->
-                IdentityScreen(viewModel = identityViewModel, modifier = contentModifier)
+            !hasIdentity || selectedTab == MainActivity.TAB_ME -> HomeScreen(
+                viewModel = identityViewModel,
+                page = homePage,
+                onPageSettled = { homePage = it },
+                onMessage = showMessage,
+                modifier = contentModifier,
+            )
             selectedTab == MainActivity.TAB_CONTACTS ->
                 ContactsScreen(onMessage = showMessage, modifier = contentModifier)
             else -> LabScreen(modifier = contentModifier)
