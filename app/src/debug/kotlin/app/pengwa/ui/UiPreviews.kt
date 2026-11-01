@@ -159,10 +159,8 @@ private val previewContacts = List(20) { index ->
 @Composable
 internal fun PreviewDestination(tab: Int, content: @Composable () -> Unit) {
     PreviewSurface {
-        Scaffold(bottomBar = { PengWaNavigation(tab, true) {} }) { padding ->
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
-                Box(Modifier.widthIn(max = ContentMaxWidth).fillMaxSize()) { content() }
-            }
+        PengWaScaffold(tab, debuggable = true, onSelect = {}) { modifier ->
+            Box(modifier) { content() }
         }
     }
 }

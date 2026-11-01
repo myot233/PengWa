@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -132,8 +133,9 @@ internal fun FaceToFacePageContent(
                 }
                 Column(Modifier.widthIn(max = 216.dp).weight(1f), horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        ExchangeQrCard(identity, onExpand = { expanded = true }, showHint = false)
+                    BoxWithConstraints(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        val edge = minOf(200.dp, maxWidth - 16.dp, maxHeight - 16.dp).coerceAtLeast(48.dp)
+                        ExchangeQrCard(identity, onExpand = { expanded = true }, showHint = false, codeSize = edge)
                     }
                     NfcStatus(nfcState, onOpenNfcSettings)
                 }
@@ -203,15 +205,15 @@ private fun ScanButton(onScan: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ExchangeQrCard(identity: Identity, onExpand: () -> Unit, modifier: Modifier = Modifier, showHint: Boolean = true) {
+private fun ExchangeQrCard(identity: Identity, onExpand: () -> Unit, modifier: Modifier = Modifier, showHint: Boolean = true, codeSize: Dp = 200.dp) {
     Surface(
-        onClick = onExpand, modifier = modifier.widthIn(max = 340.dp).fillMaxWidth(),
+        onClick = onExpand, modifier = modifier.widthIn(max = if (showHint) 340.dp else codeSize + 16.dp).fillMaxWidth(),
         shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(if (showHint) 12.dp else 8.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            QrCodeView(remember(identity) { QrPayload.encode(identity) }, Modifier.widthIn(max = 200.dp).fillMaxWidth())
+            QrCodeView(remember(identity) { QrPayload.encode(identity) }, if (showHint) Modifier.widthIn(max = 200.dp).fillMaxWidth() else Modifier.size(codeSize))
             if (showHint) Text(stringResource(R.string.qr_hint), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
         }
