@@ -11,7 +11,7 @@
   "runtime_checks": 18,
   "runtime_checks_complete": true,
   "source_commit": "c7da70c578275a3ba126507941a2fa985a68dda3",
-  "ui_commit": "82e866d2db9d9c864fa85e35d34159534e6c63b8",
+  "ui_commit": "c7da70c578275a3ba126507941a2fa985a68dda3",
   "apk_contains_phosphor_license": true,
   "native_qr_decode_count": 10
 }
