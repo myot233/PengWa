@@ -17,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import app.pengwa.ui.components.PengWaIcon
+import app.pengwa.ui.components.PengWaIcons
 import app.pengwa.R
 import app.pengwa.photo.PhotoStorage
 import java.io.File
@@ -81,7 +83,7 @@ internal fun CameraButtonContent(onClick: () -> Unit, modifier: Modifier = Modif
     ExtendedFloatingActionButton(
         modifier = modifier,
         onClick = onClick,
-        icon = { Text("📷") },
+        icon = { PengWaIcon(PengWaIcons.Camera, tint = androidx.compose.material3.MaterialTheme.colorScheme.onPrimaryContainer) },
         text = { Text(stringResource(R.string.camera_button)) },
     )
 }

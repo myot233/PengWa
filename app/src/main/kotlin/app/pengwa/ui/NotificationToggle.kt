@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +29,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.pengwa.R
 import app.pengwa.ble.BroadcastSettings
 import app.pengwa.notification.PengWaNotification
+import app.pengwa.ui.components.SettingsRow
 
 /**
  * 常驻通知开关（正式版可见）。默认关闭，用户第一次打开时才申请通知权限。
@@ -68,32 +68,22 @@ fun NotificationToggle(modifier: Modifier = Modifier) {
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.notif_setting_title), style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = stringResource(if (forcedByBroadcast) R.string.notif_forced_by_broadcast else R.string.notif_setting_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = forcedByBroadcast || (wanted && permitted),
-                enabled = !forcedByBroadcast,
-                onCheckedChange = { turnOn ->
-                    when {
-                        !turnOn -> PengWaNotification.setEnabled(context, false)
-                        PengWaNotification.hasPermission(context) -> {
-                            denied = false
-                            PengWaNotification.setEnabled(context, true)
-                        }
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        SettingsRow(
+            title = stringResource(R.string.notif_setting_title),
+            description = stringResource(if (forcedByBroadcast) R.string.notif_forced_by_broadcast else R.string.notif_setting_desc),
+            checked = forcedByBroadcast || (wanted && permitted), enabled = !forcedByBroadcast,
+            onCheckedChange = { turnOn ->
+                when {
+                    !turnOn -> PengWaNotification.setEnabled(context, false)
+                    PengWaNotification.hasPermission(context) -> {
+                        denied = false
+                        PengWaNotification.setEnabled(context, true)
                     }
-                },
-            )
-        }
-        if (denied && !permitted) {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+        )
+        if (!permitted && (wanted || forcedByBroadcast || denied)) {
             Row(
                 modifier = Modifier.padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,

@@ -30,13 +30,13 @@ class PengWaApplication : Application() {
     }
 
     /**
-     * 主页当前停在哪一页（面对面 / 蓝牙 / 都不是）。面对面页同时提供 NFC 与扫码。
+     * 当前前台目的地（我的名片 / 附近娃娃 / 都不是）。我的名片同时提供 NFC 与扫码。
      * NFC 服务、蓝牙总控、NFC 前台调度都读它。
      */
     val exchangeMode = ExchangeModeState()
 
     /**
-     * 蓝牙交换总控：主页停在蓝牙页时广播并扫描；设置里打开"后台蓝牙广播"后，由前台服务在后台只广播、等别人来申请。
+     * 蓝牙交换总控：停在附近娃娃时广播并扫描；设置里打开"后台蓝牙广播"后，由前台服务在后台只广播、等别人来申请。
      * 被申请的一方同意后才会交换。
      */
     val bleExchange: BleExchangeController by lazy {

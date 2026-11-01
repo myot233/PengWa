@@ -5,6 +5,7 @@
     <!-- 底部导航 -->
     <string name="tab_me">主页</string>
     <string name="tab_contacts">集邮册</string>
+    <string name="tab_nearby">附近娃娃</string>
     <string name="tab_lab">实验室</string>
 
     <!-- 身份 -->
@@ -17,11 +18,9 @@
 
     <!-- 主页 -->
     <string name="home_id_short">ID %1$s</string>
-    <string name="home_edit">改名</string>
+    <string name="home_edit">编辑名片</string>
     <string name="home_settings">设置</string>
     <string name="settings_title">设置</string>
-    <string name="page_face_to_face">碰一碰 / 扫码</string>
-    <string name="page_bluetooth">蓝牙</string>
 
     <string name="name_error_empty">名字不能为空</string>
     <string name="name_error_too_long">名字太长了（最多约 10 个汉字）</string>
@@ -29,9 +28,6 @@
 
     <!-- 集邮册 -->
     <string name="contacts_empty">还没有碰到过娃友\n碰一碰，就会出现在这里</string>
-    <plurals name="contact_met_summary">
-        <item quantity="other">遇见 %1$d 次 · 最近 %2$s</item>
-    </plurals>
 
     <!-- 实验室（仅调试版） -->
     <string name="lab_title">实验室（仅调试版）</string>
@@ -56,14 +52,13 @@
     <string name="camera_grant">允许使用相机</string>
 
     <!-- NFC 与相遇 -->
-    <string name="face_to_face_hint">碰一碰或扫一扫都在本页，无需切换页面。</string>
-    <string name="nfc_ready">NFC 已开启</string>
-    <string name="nfc_role_display">出示</string>
-    <string name="nfc_role_read">读取</string>
-    <string name="nfc_display_hint">请让对方选择“读取”，再碰一下交换名片。</string>
-    <string name="nfc_read_hint">请让对方保持“出示”，再碰一下交换名片。</string>
-    <string name="nfc_unsupported">此设备不支持 NFC，可使用二维码</string>
-    <string name="nfc_disabled">NFC 未开启，可先扫码</string>
+    <string name="nfc_ready">碰一碰可用</string>
+    <string name="nfc_role_display">出示我的名片</string>
+    <string name="nfc_role_read">读取对方名片</string>
+    <string name="nfc_display_hint">对方选择“读取”，手机背面靠近即可。</string>
+    <string name="nfc_read_hint">对方保持“出示”，手机背面靠近即可。</string>
+    <string name="nfc_unsupported">此设备不支持碰一碰</string>
+    <string name="nfc_disabled">碰一碰未开启</string>
     <string name="nfc_open_settings">去开启</string>
     <string name="meeting_snackbar">碰到了 %1$s</string>
     <string name="hce_service_description">碰碰娃名片</string>
@@ -77,8 +72,6 @@
     <string name="bt_open_app_settings">去系统设置</string>
     <string name="bt_off">系统蓝牙未开启</string>
     <string name="bt_turn_on">开启蓝牙</string>
-    <string name="bt_searching">正在搜索附近的碰碰娃…\n让对方也切到“蓝牙”页</string>
-    <string name="bt_nearby_title">附近的碰碰娃（%1$d）· 点一下向对方申请，对方同意后才会交换</string>
     <string name="bt_peer_unknown">附近的碰碰娃</string>
     <string name="bt_reading_name">正在识别…</string>
     <string name="bt_signal_strong">信号强</string>
@@ -87,7 +80,7 @@
     <string name="bt_request">申请交换</string>
     <string name="bt_requesting">正在发出申请…</string>
     <string name="bt_waiting">等待对方同意…</string>
-    <string name="bt_done">✓ 已交换</string>
+    <string name="bt_done">已交换</string>
     <string name="bt_retry">重试</string>
     <string name="bt_failed">交换失败</string>
 
@@ -107,7 +100,7 @@
     <string name="bg_running">已开启 · 正在后台广播，有人申请时会通知你</string>
 
     <!-- 面对面页的二维码与扫码 -->
-    <string name="qr_hint">让对方用碰碰娃扫一扫</string>
+    <string name="qr_hint">让对方扫一扫 · 点码可放大</string>
     <string name="qr_scan">扫一扫</string>
     <string name="qr_scan_hint">把对方的二维码放进取景框</string>
     <string name="qr_close">关闭</string>
@@ -130,4 +123,20 @@
     <string name="notif_forced_by_broadcast">后台蓝牙广播开着时，这条通知必须常驻</string>
     <string name="notif_btn_me">主页</string>
     <string name="notif_btn_contacts">集邮册</string>
+    <string name="my_card">我的名片</string>
+    <string name="contacts_count">已收集 %1$d 位娃友的名片</string>
+    <string name="contacts_empty_title">下一次相遇，从这里开始</string>
+    <string name="contacts_exchange">去交换名片</string>
+    <string name="contact_times">遇见 %1$d 次</string>
+    <string name="contact_first">初次相遇</string>
+    <string name="contact_last">最近相遇</string>
+    <string name="contact_id">完整 ID</string>
+    <string name="close">关闭</string>
+    <string name="bt_consent_hint">对方同意后，才会互相交换名片</string>
+    <string name="bt_search_title">寻找下一次相遇</string>
+    <string name="bt_search_help">让对方也打开“附近娃娃”。暂未发现？可以靠近一些、检查权限，或回到主页扫码。</string>
+    <string name="bt_search_count">发现 %1$d 位 · 持续搜索中</string>
+    <string name="request_source">来自附近的蓝牙</string>
+    <string name="request_accept_in_app">同意交换</string>
+    <string name="qr_code_label">我的名片二维码</string>
 </resources>

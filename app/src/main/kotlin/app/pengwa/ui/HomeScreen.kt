@@ -5,33 +5,35 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.pengwa.R
@@ -39,28 +41,16 @@ import app.pengwa.exchange.ExchangeMode
 import app.pengwa.identity.Identity
 import app.pengwa.identity.NameError
 import app.pengwa.pengWa
-import kotlinx.coroutines.launch
+import app.pengwa.ui.components.PengWaIcon
+import app.pengwa.ui.components.PengWaIcons
+import app.pengwa.ui.theme.PageGutter
 
-/** NFC 与扫码共用默认页，蓝牙单独一页。 */
-const val PAGE_FACE_TO_FACE = 0
-const val PAGE_BLUETOOTH = 1
-private const val PAGE_COUNT = 2
-
-private fun modeForPage(page: Int, nfcRole: ExchangeMode) = when (page) {
-    PAGE_FACE_TO_FACE -> nfcRole
-    PAGE_BLUETOOTH -> ExchangeMode.Bluetooth
-    else -> ExchangeMode.None
-}
-
-/**
- * 主页：顶部是我的名片，下面是碰一碰（NFC + 扫码）/ 蓝牙两个可左右滑动的页。
- * 没有设置显示名或正在改名时，显示设置表单。三种方式交换的是同一张名片。
- */
+/** 我的名片：碰一碰与扫码共用一页，附近娃娃由底部导航进入。 */
 @Composable
 fun HomeScreen(
     viewModel: IdentityViewModel,
-    page: Int,
-    onPageSettled: (Int) -> Unit,
+    role: ExchangeMode,
+    onRoleChange: (ExchangeMode) -> Unit,
     onMessage: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -83,14 +73,12 @@ fun HomeScreen(
         return
     }
 
+    ExchangeSession(role)
     Column(modifier = modifier.fillMaxSize()) {
         HomeHeader(identity, onEdit = { editing = true }, onSettings = { showSettings = true })
-        ExchangePager(
-            identity = identity,
-            initialPage = page,
-            onPageSettled = onPageSettled,
-            onMessage = onMessage,
-            modifier = Modifier.weight(1f),
+        FaceToFacePage(
+            identity = identity, role = role, onRoleChange = onRoleChange,
+            onMessage = onMessage, modifier = Modifier.weight(1f),
         )
     }
 
@@ -98,73 +86,31 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(identity: Identity, onEdit: () -> Unit, onSettings: () -> Unit) {
+internal fun HomeHeader(identity: Identity, onEdit: () -> Unit, onSettings: () -> Unit) {
+    val compact = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() < 480.dp }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 8.dp, top = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = PageGutter, vertical = if (compact) 4.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(identity.displayName, style = MaterialTheme.typography.headlineMedium, maxLines = 1)
-            Text(
-                text = stringResource(R.string.home_id_short, identity.id.toString().take(8)),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Column(Modifier.weight(1f)) {
+            if (!compact) Text(stringResource(R.string.my_card), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+            Text(identity.displayName, style = MaterialTheme.typography.headlineSmall, maxLines = if (compact) 1 else 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+            if (!compact) Text(stringResource(R.string.home_id_short, identity.id.toString().take(8)),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp))
         }
-        TextButton(onClick = onEdit) { Text(stringResource(R.string.home_edit)) }
-        TextButton(onClick = onSettings) { Text(stringResource(R.string.home_settings)) }
+        IconButton(onClick = onEdit) { PengWaIcon(PengWaIcons.Edit, contentDescription = stringResource(R.string.home_edit)) }
+        IconButton(onClick = onSettings) { PengWaIcon(PengWaIcons.Settings, contentDescription = stringResource(R.string.home_settings)) }
     }
 }
 
+/** Stops the outgoing hardware session before another destination starts its own. */
 @Composable
-private fun ExchangePager(
-    identity: Identity,
-    initialPage: Int,
-    onPageSettled: (Int) -> Unit,
-    onMessage: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(
-        initialPage = if (initialPage == PAGE_BLUETOOTH) PAGE_BLUETOOTH else PAGE_FACE_TO_FACE,
-        pageCount = { PAGE_COUNT },
-    )
-    var nfcRole by rememberSaveable { mutableStateOf(ExchangeMode.NfcDisplay) }
-    val titles = listOf(R.string.page_face_to_face, R.string.page_bluetooth)
-
-    // 以"停稳"的那一页为准，滑动过程中经过的页不会被启用
-    val settled = pagerState.settledPage
-    LaunchedEffect(settled) { onPageSettled(settled) }
-
-    val modeState = context.pengWa.exchangeMode
-    LifecycleResumeEffect(settled, nfcRole) {
-        modeState.set(modeForPage(settled, nfcRole))
-        onPauseOrDispose { modeState.set(ExchangeMode.None) }
-    }
-
-    Column(modifier = modifier) {
-        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
-            titles.forEachIndexed { index, title ->
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                    text = { Text(stringResource(title)) },
-                )
-            }
-        }
-        HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
-            when (page) {
-                PAGE_FACE_TO_FACE -> FaceToFacePage(
-                    identity = identity,
-                    selected = settled == page,
-                    role = nfcRole,
-                    onRoleChange = { nfcRole = it },
-                    onMessage = onMessage,
-                )
-                PAGE_BLUETOOTH -> BluetoothPage()
-            }
-        }
+internal fun ExchangeSession(mode: ExchangeMode) {
+    val state = LocalContext.current.pengWa.exchangeMode
+    LifecycleResumeEffect(mode) {
+        state.set(mode)
+        onPauseOrDispose { state.set(ExchangeMode.None) }
     }
 }
 
@@ -172,20 +118,29 @@ private fun ExchangePager(
 @Composable
 private fun SettingsSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge)
-            BackgroundBroadcastToggle()
-            NotificationToggle()
+        SettingsContent(backgroundBroadcast = { BackgroundBroadcastToggle() }, notification = { NotificationToggle() })
+    }
+}
+
+@Composable
+internal fun SettingsContent(backgroundBroadcast: @Composable () -> Unit, notification: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = PageGutter, end = PageGutter, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleLarge)
+        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer) {
+            Column(Modifier.padding(16.dp)) { backgroundBroadcast() }
+        }
+        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer) {
+            Column(Modifier.padding(16.dp)) { notification() }
         }
     }
 }
 
 /** 设置或修改显示名的表单。 */
 @Composable
-private fun NameForm(
+internal fun NameForm(
     initialName: String,
     canCancel: Boolean,
     onSave: (String) -> NameError?,
@@ -200,7 +155,7 @@ private fun NameForm(
     }
 
     Column(
-        modifier = modifier.fillMaxSize().imePadding().padding(horizontal = 24.dp),
+        modifier = modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = PageGutter, vertical = 24.dp),
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
@@ -227,7 +182,7 @@ private fun NameForm(
             keyboardActions = KeyboardActions(onDone = { submit() }),
             modifier = Modifier.fillMaxWidth(),
         )
-        Button(onClick = ::submit, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+        Button(onClick = ::submit, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).heightIn(min = 52.dp)) {
             Text(stringResource(R.string.save))
         }
         if (canCancel) {

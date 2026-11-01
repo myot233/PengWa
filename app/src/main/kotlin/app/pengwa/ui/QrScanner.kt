@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import android.util.Size
+import android.util.Size as CameraSize
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -16,16 +16,22 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +42,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -46,6 +56,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.pengwa.R
 import app.pengwa.qr.QrFrameDecoder
+import app.pengwa.ui.components.PengWaIcon
+import app.pengwa.ui.components.PengWaIcons
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -65,44 +77,51 @@ fun QrScanner(onResult: (String) -> Unit, onClose: () -> Unit, modifier: Modifie
     LaunchedEffect(Unit) { if (!granted) permissionLauncher.launch(Manifest.permission.CAMERA) }
 
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
+        if (granted) CameraPreview(onResult = onResult)
+        ScannerOverlay(granted = granted, denied = denied, onClose = onClose, onPermission = {
+            if (denied) {
+                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)))
+            } else permissionLauncher.launch(Manifest.permission.CAMERA)
+        })
+    }
+}
+
+@Composable
+internal fun ScannerOverlay(granted: Boolean, denied: Boolean, onClose: () -> Unit, onPermission: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
         if (granted) {
-            CameraPreview(onResult = onResult)
-            Text(
-                text = stringResource(R.string.qr_scan_hint),
-                color = Color.White,
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
-            )
+            Canvas(Modifier.fillMaxSize()) {
+                val edge = minOf(size.width * .72f, size.height * .56f)
+                val left = (size.width - edge) / 2
+                val top = (size.height - edge) / 2
+                val shade = Color.Black.copy(alpha = .55f)
+                drawRect(shade, size = Size(size.width, top))
+                drawRect(shade, topLeft = Offset(0f, top + edge), size = Size(size.width, top))
+                drawRect(shade, topLeft = Offset(0f, top), size = Size(left, edge))
+                drawRect(shade, topLeft = Offset(left + edge, top), size = Size(left, edge))
+                drawRoundRect(Color.White, topLeft = Offset(left, top), size = Size(edge, edge),
+                    cornerRadius = CornerRadius(16.dp.toPx()), style = Stroke(3.dp.toPx()))
+            }
+            Surface(modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                shape = MaterialTheme.shapes.medium, color = Color.Black.copy(alpha = .8f), contentColor = Color.White) {
+                Text(stringResource(R.string.qr_scan_hint), style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center, modifier = Modifier.padding(16.dp))
+            }
         } else {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = stringResource(R.string.camera_permission_needed),
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                )
-                Button(
-                    onClick = {
-                        if (denied) {
-                            context.startActivity(
-                                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
-                            )
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    },
-                    modifier = Modifier.padding(top = 16.dp),
-                ) {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
+                verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                PengWaIcon(PengWaIcons.Camera, modifier = Modifier.size(48.dp), tint = Color.White)
+                Text(stringResource(R.string.camera_permission_needed), color = Color.White,
+                    textAlign = TextAlign.Center, modifier = Modifier.padding(top = 24.dp))
+                Button(onClick = onPermission, modifier = Modifier.padding(top = 16.dp).heightIn(min = 48.dp)) {
                     Text(stringResource(if (denied) R.string.bt_open_app_settings else R.string.camera_grant))
                 }
             }
         }
-        TextButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
-            Text(stringResource(R.string.qr_close), color = Color.White)
+        Button(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).heightIn(min = 48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Black, contentColor = Color.White)) {
+            PengWaIcon(PengWaIcons.Close, tint = Color.White)
+            Text(stringResource(R.string.qr_close), modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
@@ -131,7 +150,7 @@ private fun CameraPreview(onResult: (String) -> Unit) {
                     .setResolutionSelector(
                         ResolutionSelector.Builder()
                             .setResolutionStrategy(
-                                ResolutionStrategy(Size(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER),
+                                ResolutionStrategy(CameraSize(1280, 720), ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER),
                             )
                             .build(),
                     )

@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
             requestedTab = tabFrom(intent)
             handleNdefLaunch(intent)
         }
-        // 只有主页停在 碰一碰 / 扫码页并且本页在前台时，才接收别人的卡；切走或退到后台立即关闭
+        // 只有主页在前台时，才接收别人的卡；切走或退到后台立即关闭
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 pengWa.exchangeMode.mode.collect { mode -> nfcMode.apply(mode) }
@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
         const val TAB_ME = 0
         const val TAB_CONTACTS = 1
         const val TAB_LAB = 2
+        const val TAB_NEARBY = 3
         private const val IGNORE_TAG_MILLIS = 2000
     }
 }

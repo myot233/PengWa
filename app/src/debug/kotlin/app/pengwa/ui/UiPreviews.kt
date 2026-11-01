@@ -1,7 +1,16 @@
 package app.pengwa.ui
 
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
+import app.pengwa.MainActivity
+import app.pengwa.R
+import androidx.compose.ui.res.stringResource
+import app.pengwa.ui.components.SettingsRow
+import app.pengwa.ui.components.ExchangeRequestDialog
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,6 +18,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import app.pengwa.ui.theme.ContentMaxWidth
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -26,7 +37,7 @@ import java.util.UUID
 internal annotation class PengWaPreviews
 
 @Composable
-private fun PreviewSurface(content: @Composable () -> Unit) {
+internal fun PreviewSurface(content: @Composable () -> Unit) {
     PengWaTheme(dynamicColor = false) {
         Surface(modifier = Modifier.fillMaxSize(), content = content)
     }
@@ -49,7 +60,7 @@ internal class NfcPreviewProvider : PreviewParameterProvider<NfcPreviewState> {
 @Composable
 internal fun FaceToFacePagePreview(@PreviewParameter(NfcPreviewProvider::class) sample: NfcPreviewState) {
     var role by remember(sample) { mutableStateOf(sample.role) }
-    PreviewSurface {
+    PreviewHome {
         FaceToFacePageContent(
             identity = Identity(UUID(0L, 1L), "小棉花"),
             role = role,
@@ -84,7 +95,7 @@ internal class BluetoothPreviewProvider : PreviewParameterProvider<BluetoothPrev
 @PengWaPreviews
 @Composable
 internal fun BluetoothPagePreview(@PreviewParameter(BluetoothPreviewProvider::class) sample: BluetoothPreviewState) {
-    PreviewSurface {
+    PreviewDestination(MainActivity.TAB_NEARBY) {
         BluetoothPageContent(
             permitted = sample.permitted,
             denied = sample.denied,
@@ -123,8 +134,8 @@ internal class ContactsPreviewProvider : PreviewParameterProvider<ContactsPrevie
 @PengWaPreviews
 @Composable
 internal fun ContactsScreenPreview(@PreviewParameter(ContactsPreviewProvider::class) sample: ContactsPreviewState) {
-    PreviewSurface {
-        ContactsScreenContent(contacts = sample.contacts) { buttonModifier ->
+    PreviewDestination(MainActivity.TAB_CONTACTS) {
+        ContactsScreenContent(contacts = sample.contacts, now = 1_793_462_400_000L) { buttonModifier ->
             CameraButtonContent(onClick = {}, modifier = buttonModifier)
         }
     }
@@ -143,4 +154,61 @@ private val previewContacts = List(20) { index ->
         lastMetAt = 1_793_462_400_000L + index * 3_600_000L,
         metCount = if (index == 1) 999 else index + 1,
     )
+}
+
+@Composable
+internal fun PreviewDestination(tab: Int, content: @Composable () -> Unit) {
+    PreviewSurface {
+        Scaffold(bottomBar = { PengWaNavigation(tab, true) {} }) { padding ->
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+                Box(Modifier.widthIn(max = ContentMaxWidth).fillMaxSize()) { content() }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun PreviewHome(content: @Composable () -> Unit) {
+    PreviewDestination(MainActivity.TAB_ME) {
+        Column(Modifier.fillMaxSize()) {
+            HomeHeader(Identity(UUID(0L, 1L), "小棉花"), onEdit = {}, onSettings = {})
+            Box(Modifier.weight(1f)) { content() }
+        }
+    }
+}
+
+@PengWaPreviews
+@Composable
+internal fun SettingsPreview() {
+    PreviewSurface {
+        SettingsContent(
+            backgroundBroadcast = { SettingsRow(stringResource(R.string.bg_setting_title), stringResource(R.string.bg_setting_desc), false) {} },
+            notification = { SettingsRow(stringResource(R.string.notif_setting_title), stringResource(R.string.notif_setting_desc), false) {} },
+        )
+    }
+}
+
+@PengWaPreviews
+@Composable
+internal fun RequestPreview() {
+    PreviewHome { }
+    PengWaTheme(dynamicColor = false) { ExchangeRequestDialog("名字很长很长的娃友", "00000001", {}, {}) }
+}
+
+@PengWaPreviews
+@Composable
+internal fun NameFormPreview() {
+    PreviewSurface { NameForm("", false, { null }, {}) }
+}
+
+@PengWaPreviews
+@Composable
+internal fun ScannerPermissionPreview() {
+    PreviewSurface { Box(Modifier.fillMaxSize().background(Color.Black)) { ScannerOverlay(false, true, {}, {}) } }
+}
+
+@PengWaPreviews
+@Composable
+internal fun ContactDetailsPreview() {
+    PreviewSurface { ContactDetails(previewContacts[1]) {} }
 }

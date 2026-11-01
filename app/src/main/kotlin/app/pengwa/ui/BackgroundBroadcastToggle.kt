@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pengwa.R
 import app.pengwa.ble.BlePermissions
 import app.pengwa.pengWa
+import app.pengwa.ui.components.SettingsRow
+import app.pengwa.ui.theme.LocalStatusColors
 
 /** 后台广播需要的权限：广播 + 连接（Android 12+），以及发通知（Android 13+，用来提醒"有人想和你交换"）。 */
 private fun broadcastPermissions(): Array<String> =
@@ -90,28 +91,19 @@ fun BackgroundBroadcastToggle(modifier: Modifier = Modifier) {
 
     val checked = wanted && permitted
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.bg_setting_title), style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = stringResource(R.string.bg_setting_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = { turnOnRequested ->
-                    when {
-                        !turnOnRequested -> controller.setBackgroundBroadcast(false)
-                        hasBroadcastPermissions(context) -> turnOn()
-                        else -> permissionLauncher.launch(broadcastPermissions())
-                    }
-                },
-            )
-        }
+        SettingsRow(
+            title = stringResource(R.string.bg_setting_title), description = stringResource(R.string.bg_setting_desc),
+            checked = checked,
+            onCheckedChange = { turnOnRequested ->
+                when {
+                    !turnOnRequested -> controller.setBackgroundBroadcast(false)
+                    hasBroadcastPermissions(context) -> turnOn()
+                    else -> permissionLauncher.launch(broadcastPermissions())
+                }
+            },
+        )
         when {
-            denied && !permitted -> StatusRow(
+            !permitted && (wanted || denied) -> StatusRow(
                 message = stringResource(R.string.bg_permission_needed),
                 actionLabel = stringResource(R.string.bt_open_app_settings),
             ) {
@@ -127,7 +119,7 @@ fun BackgroundBroadcastToggle(modifier: Modifier = Modifier) {
             checked -> Text(
                 text = stringResource(R.string.bg_running),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = LocalStatusColors.current.success,
             )
         }
     }

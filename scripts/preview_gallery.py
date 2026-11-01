@@ -10,7 +10,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 
-SCREENS = {"FaceToFaceScreenshots": "碰一碰 / 扫码", "BluetoothScreenshots": "蓝牙", "ContactsScreenshots": "集邮册"}
+SCREENS = {"FaceToFaceScreenshots": "碰一碰 / 扫码", "BluetoothScreenshots": "蓝牙", "ContactsScreenshots": "集邮册", "SettingsScreenshots": "设置", "RequestScreenshots": "交换申请", "NameFormScreenshots": "首次命名", "ScannerPermissionScreenshots": "相机权限", "ContactDetailsScreenshots": "名片详情", "ResponsiveScreenshots": "屏幕适配"}
 CONFIGURATIONS = {"浅色": "light", "深色": "dark", "窄屏大字体": "large-font"}
 
 

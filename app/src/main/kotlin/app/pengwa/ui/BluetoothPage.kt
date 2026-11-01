@@ -6,7 +6,18 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Surface
+import app.pengwa.ui.components.NameStamp
+import app.pengwa.ui.components.PengWaIcon
+import app.pengwa.ui.components.PengWaIcons
+import app.pengwa.ui.theme.PageGutter
+import app.pengwa.ui.theme.LocalStatusColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,12 +27,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +48,13 @@ import app.pengwa.ble.BlePermissions
 import app.pengwa.ble.NearbyPeer
 import app.pengwa.ble.PeerState
 import app.pengwa.pengWa
+
+/** Bottom navigation owns the foreground Bluetooth session; permission and scanning remain in BluetoothPage. */
+@Composable
+fun NearbyScreen(modifier: Modifier = Modifier) {
+    ExchangeSession(app.pengwa.exchange.ExchangeMode.Bluetooth)
+    BluetoothPage(modifier)
+}
 
 /**
  * 蓝牙页：停在这一页时，近场的碰碰娃互相可以发现，列成一个列表，**点谁才和谁交换**，不会自动交换。
@@ -105,7 +120,10 @@ internal fun BluetoothPageContent(
     onExchange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().padding(horizontal = PageGutter)) {
+        Text(stringResource(R.string.tab_nearby), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 24.dp))
+        Text(stringResource(R.string.bt_consent_hint), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
         when {
             !permitted -> Prompt(
                 message = stringResource(if (denied) R.string.bt_permission_needed else R.string.bt_permission_intro),
@@ -113,23 +131,14 @@ internal fun BluetoothPageContent(
                 onAction = onPermission,
             )
             !bluetoothOn -> Prompt(
-                message = stringResource(R.string.bt_off),
-                actionLabel = stringResource(R.string.bt_turn_on),
-                onAction = onEnableBluetooth,
+                message = stringResource(R.string.bt_off), actionLabel = stringResource(R.string.bt_turn_on), onAction = onEnableBluetooth,
             )
-            nearby.isEmpty() -> Prompt(message = stringResource(R.string.bt_searching), actionLabel = null) {}
+            nearby.isEmpty() -> Prompt(message = stringResource(R.string.bt_search_help), actionLabel = null) {}
             else -> {
-                Text(
-                    text = stringResource(R.string.bt_nearby_title, nearby.size),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                )
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(nearby, key = { it.address }) { peer ->
-                        PeerRow(peer, onExchange = { onExchange(peer.address) })
-                        HorizontalDivider()
-                    }
+                Text(stringResource(R.string.bt_search_count, nearby.size), style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 12.dp))
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 20.dp)) {
+                    items(nearby, key = { it.address }) { peer -> PeerRow(peer) { onExchange(peer.address) } }
                 }
             }
         }
@@ -139,54 +148,58 @@ internal fun BluetoothPageContent(
 @Composable
 private fun Prompt(message: String, actionLabel: String?, onAction: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp),
+        verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
+            PengWaIcon(PengWaIcons.Bluetooth, modifier = Modifier.padding(20.dp).size(48.dp), tint = MaterialTheme.colorScheme.primary)
+        }
         if (actionLabel == null) {
-            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+            Text(stringResource(R.string.bt_search_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp).size(24.dp), strokeWidth = 2.dp)
         }
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = if (actionLabel == null) 16.dp else 0.dp),
-        )
-        if (actionLabel != null) {
-            Button(onClick = onAction, modifier = Modifier.padding(top = 16.dp)) { Text(actionLabel) }
-        }
+        Text(message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp))
+        if (actionLabel != null) Button(onClick = onAction, modifier = Modifier.padding(top = 24.dp).heightIn(min = 48.dp)) { Text(actionLabel) }
     }
 }
 
 @Composable
 private fun PeerRow(peer: NearbyPeer, onExchange: () -> Unit) {
-    val busy = peer.state == PeerState.Exchanging || peer.state == PeerState.Waiting
-    ListItem(
-        modifier = Modifier.clickable(enabled = !busy, onClick = onExchange),
-        headlineContent = { Text(peer.name ?: stringResource(R.string.bt_peer_unknown)) },
-        supportingContent = {
-            Text(
-                text = when {
-                    peer.state == PeerState.Failed -> peer.message ?: stringResource(R.string.bt_failed)
-                    peer.state == PeerState.Exchanging -> stringResource(R.string.bt_requesting)
-                    peer.state == PeerState.Waiting -> stringResource(R.string.bt_waiting)
-                    peer.name == null -> stringResource(R.string.bt_reading_name)
-                    else -> stringResource(signalLabel(peer.rssi))
-                },
-                color = if (peer.state == PeerState.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        trailingContent = {
-            when (peer.state) {
-                PeerState.Exchanging, PeerState.Waiting ->
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                PeerState.Done -> Text(stringResource(R.string.bt_done), color = MaterialTheme.colorScheme.primary)
-                PeerState.Failed -> TextButton(onClick = onExchange) { Text(stringResource(R.string.bt_retry)) }
-                else -> OutlinedButton(onClick = onExchange) { Text(stringResource(R.string.bt_request)) }
+    Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                NameStamp(peer.name.orEmpty())
+                Column(Modifier.weight(1f)) {
+                    Text(peer.name ?: stringResource(R.string.bt_peer_unknown), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        text = when {
+                            peer.state == PeerState.Failed -> peer.message ?: stringResource(R.string.bt_failed)
+                            peer.state == PeerState.Exchanging -> stringResource(R.string.bt_requesting)
+                            peer.state == PeerState.Waiting -> stringResource(R.string.bt_waiting)
+                            peer.state == PeerState.Done -> stringResource(R.string.bt_done)
+                            peer.name == null -> stringResource(R.string.bt_reading_name)
+                            else -> stringResource(signalLabel(peer.rssi))
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = when (peer.state) {
+                            PeerState.Failed -> MaterialTheme.colorScheme.error
+                            PeerState.Done -> LocalStatusColors.current.success
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
             }
-        },
-    )
+            when (peer.state) {
+                PeerState.Exchanging, PeerState.Waiting -> CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.End).size(24.dp), strokeWidth = 2.dp)
+                PeerState.Done -> PengWaIcon(PengWaIcons.Success, modifier = Modifier.align(Alignment.End), tint = LocalStatusColors.current.success)
+                else -> OutlinedButton(onClick = onExchange, modifier = Modifier.align(Alignment.End).heightIn(min = 48.dp)) {
+                    Text(stringResource(if (peer.state == PeerState.Failed) R.string.bt_retry else R.string.bt_request))
+                }
+            }
+        }
+    }
 }
 
 private fun signalLabel(rssi: Int): Int = when {
