@@ -1,5 +1,8 @@
 package app.pengwa.ui
 
+import android.content.Intent
+import android.provider.Settings
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +40,26 @@ fun NfcPage(
     onShowQr: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    NfcPageContent(
+        role = role,
+        nfcState = rememberNfcState(),
+        onRoleChange = onRoleChange,
+        onShowQr = onShowQr,
+        onOpenNfcSettings = { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS)) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun NfcPageContent(
+    role: ExchangeMode,
+    nfcState: NfcState,
+    onRoleChange: (ExchangeMode) -> Unit,
+    onShowQr: () -> Unit,
+    onOpenNfcSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.Center,
@@ -47,7 +71,7 @@ fun NfcPage(
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(top = 16.dp),
         )
-        NfcStatus(modifier = Modifier.padding(top = 12.dp))
+        NfcStatus(state = nfcState, onOpenSettings = onOpenNfcSettings, modifier = Modifier.padding(top = 12.dp))
         Row(modifier = Modifier.fillMaxWidth().padding(top = 16.dp).selectableGroup()) {
             listOf(
                 ExchangeMode.NfcDisplay to R.string.nfc_role_display,

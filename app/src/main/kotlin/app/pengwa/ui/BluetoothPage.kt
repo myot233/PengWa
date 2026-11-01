@@ -74,26 +74,49 @@ fun BluetoothPage(modifier: Modifier = Modifier) {
         }
     }
 
+    BluetoothPageContent(
+        permitted = permitted,
+        denied = denied,
+        bluetoothOn = bluetoothOn,
+        nearby = nearby,
+        onPermission = {
+            if (denied) {
+                context.startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
+                )
+            } else {
+                permissionLauncher.launch(BlePermissions.required())
+            }
+        },
+        onEnableBluetooth = { enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)) },
+        onExchange = { controller.exchangeWith(it) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun BluetoothPageContent(
+    permitted: Boolean,
+    denied: Boolean,
+    bluetoothOn: Boolean,
+    nearby: List<NearbyPeer>,
+    onPermission: () -> Unit,
+    onEnableBluetooth: () -> Unit,
+    onExchange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxSize()) {
         when {
             !permitted -> Prompt(
                 message = stringResource(if (denied) R.string.bt_permission_needed else R.string.bt_permission_intro),
                 actionLabel = stringResource(if (denied) R.string.bt_open_app_settings else R.string.bt_grant),
-            ) {
-                if (denied) {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null)),
-                    )
-                } else {
-                    permissionLauncher.launch(BlePermissions.required())
-                }
-            }
+                onAction = onPermission,
+            )
             !bluetoothOn -> Prompt(
                 message = stringResource(R.string.bt_off),
                 actionLabel = stringResource(R.string.bt_turn_on),
-            ) {
-                enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-            }
+                onAction = onEnableBluetooth,
+            )
             nearby.isEmpty() -> Prompt(message = stringResource(R.string.bt_searching), actionLabel = null) {}
             else -> {
                 Text(
@@ -104,7 +127,7 @@ fun BluetoothPage(modifier: Modifier = Modifier) {
                 )
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     items(nearby, key = { it.address }) { peer ->
-                        PeerRow(peer, onExchange = { controller.exchangeWith(peer.address) })
+                        PeerRow(peer, onExchange = { onExchange(peer.address) })
                         HorizontalDivider()
                     }
                 }

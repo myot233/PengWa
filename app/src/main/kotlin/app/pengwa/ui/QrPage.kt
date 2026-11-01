@@ -58,6 +58,11 @@ fun QrPage(identity: Identity, onMessage: (String) -> Unit, modifier: Modifier =
         return
     }
 
+    QrPageContent(identity = identity, onScan = { scanning = true }, modifier = modifier)
+}
+
+@Composable
+internal fun QrPageContent(identity: Identity, onScan: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center,
@@ -70,7 +75,7 @@ fun QrPage(identity: Identity, onMessage: (String) -> Unit, modifier: Modifier =
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 16.dp),
         )
-        Button(onClick = { scanning = true }, modifier = Modifier.padding(top = 16.dp)) {
+        Button(onClick = onScan, modifier = Modifier.padding(top = 16.dp)) {
             Text(stringResource(R.string.qr_scan))
         }
     }

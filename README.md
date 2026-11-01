@@ -261,6 +261,24 @@ docs/                           protocol.md（协议规格）、release.md（发
 apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
 ```
 
+### Compose Preview
+
+在 Android Studio 中选择 `debug` 构建变体，打开
+`app/src/debug/kotlin/app/pengwa/ui/UiPreviews.kt`，切换到 **Split / Design** 并执行 **Build & Refresh**。
+预览复用应用的界面组件，示例数据只编入调试版，不需要手机、NFC、蓝牙权限、数据库或相机。
+
+- `NfcPagePreview`：出示、读取、NFC 未开启、不支持 NFC；交互预览中可以切换角色。
+- `BluetoothPagePreview`：未授权、权限被拒绝、蓝牙关闭、搜索中，以及发现／就绪／申请／等待／成功／失败的列表项。
+- `ContactsScreenPreview`：空集邮册、长名字和相遇次数、可滚动的列表，包含拍照按钮。
+- `QrPagePreview`：使用固定测试身份生成二维码，扫码按钮为空操作。
+
+每个场景提供浅色、深色和 320dp 窄屏／1.5 倍字体三种配置；主题关闭动态取色，便于比较。
+场景较多时可切换到 **Focus** 模式，只渲染当前需要的预览。除 NFC 角色切换和列表滚动外，操作回调均为空，
+不会打开系统设置、申请权限、交换名片或启动相机。
+
+新增预览时优先调用接收状态和回调的 `*Content` 组件；硬件查询、权限、ViewModel 和生命周期处理保留在外层页面。
+Preview 用于检查界面状态和布局；真实 NFC／蓝牙交换与相机识别仍需运行应用验证。
+
 ---
 
 ## 8. 后续计划
