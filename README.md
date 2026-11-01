@@ -11,6 +11,7 @@
 
 > 这份文档是项目的"总说明"：为什么做、最初怎么设计的、现在是什么样、测过什么、没测什么、要注意什么。
 > 数据协议的完整规格见 [`docs/protocol.md`](docs/protocol.md)，发布与签名见 [`docs/release.md`](docs/release.md)。
+> 统一设计系统与界面优化提案见 [`docs/design-system.md`](docs/design-system.md)，包含图标选型、主题规范与迁移计划。
 
 ---
 
