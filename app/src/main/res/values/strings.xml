@@ -20,9 +20,8 @@
     <string name="home_edit">改名</string>
     <string name="home_settings">设置</string>
     <string name="settings_title">设置</string>
-    <string name="page_nfc">NFC</string>
+    <string name="page_face_to_face">碰一碰 / 扫码</string>
     <string name="page_bluetooth">蓝牙</string>
-    <string name="page_qr">二维码</string>
 
     <string name="name_error_empty">名字不能为空</string>
     <string name="name_error_too_long">名字太长了（最多约 10 个汉字）</string>
@@ -57,16 +56,14 @@
     <string name="camera_grant">允许使用相机</string>
 
     <!-- NFC 与相遇 -->
-    <string name="nfc_page_title">碰一碰</string>
-    <string name="nfc_page_hint">双方保持本页打开，一方出示、一方读取。\n手机背靠背贴近 NFC 感应区；滑走就关闭。</string>
+    <string name="face_to_face_hint">碰一碰或扫一扫都在本页，无需切换页面。</string>
     <string name="nfc_ready">NFC 已开启</string>
     <string name="nfc_role_display">出示</string>
     <string name="nfc_role_read">读取</string>
     <string name="nfc_display_hint">请让对方选择“读取”，再碰一下交换名片。</string>
     <string name="nfc_read_hint">请让对方保持“出示”，再碰一下交换名片。</string>
-    <string name="nfc_show_qr">碰不到？用二维码交换</string>
-    <string name="nfc_unsupported">此设备不支持 NFC</string>
-    <string name="nfc_disabled">NFC 未开启</string>
+    <string name="nfc_unsupported">此设备不支持 NFC，可使用二维码</string>
+    <string name="nfc_disabled">NFC 未开启，可先扫码</string>
     <string name="nfc_open_settings">去开启</string>
     <string name="meeting_snackbar">碰到了 %1$s</string>
     <string name="hce_service_description">碰碰娃名片</string>
@@ -109,7 +106,7 @@
     <string name="bg_permission_needed">需要“附近的设备”和“通知”权限，才能在后台广播并提醒你</string>
     <string name="bg_running">已开启 · 正在后台广播，有人申请时会通知你</string>
 
-    <!-- 二维码页 -->
+    <!-- 面对面页的二维码与扫码 -->
     <string name="qr_hint">让对方用碰碰娃扫一扫</string>
     <string name="qr_scan">扫一扫</string>
     <string name="qr_scan_hint">把对方的二维码放进取景框</string>

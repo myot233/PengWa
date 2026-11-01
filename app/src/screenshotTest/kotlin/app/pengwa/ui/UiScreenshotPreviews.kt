@@ -7,8 +7,8 @@ import com.android.tools.screenshot.PreviewTest
 @PreviewTest
 @PengWaPreviews
 @Composable
-internal fun NfcScreenshots(@PreviewParameter(NfcPreviewProvider::class) sample: NfcPreviewState) {
-    NfcPagePreview(sample)
+internal fun FaceToFaceScreenshots(@PreviewParameter(NfcPreviewProvider::class) sample: NfcPreviewState) {
+    FaceToFacePagePreview(sample)
 }
 
 @PreviewTest
@@ -23,11 +23,4 @@ internal fun BluetoothScreenshots(@PreviewParameter(BluetoothPreviewProvider::cl
 @Composable
 internal fun ContactsScreenshots(@PreviewParameter(ContactsPreviewProvider::class) sample: ContactsPreviewState) {
     ContactsScreenPreview(sample)
-}
-
-@PreviewTest
-@PengWaPreviews
-@Composable
-internal fun QrScreenshots() {
-    QrPagePreview()
 }

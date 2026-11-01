@@ -10,7 +10,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 
-SCREENS = {"NfcScreenshots": "NFC", "BluetoothScreenshots": "蓝牙", "ContactsScreenshots": "集邮册", "QrScreenshots": "二维码"}
+SCREENS = {"FaceToFaceScreenshots": "碰一碰 / 扫码", "BluetoothScreenshots": "蓝牙", "ContactsScreenshots": "集邮册"}
 CONFIGURATIONS = {"浅色": "light", "深色": "dark", "窄屏大字体": "large-font"}
 
 

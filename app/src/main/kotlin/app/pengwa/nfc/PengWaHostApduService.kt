@@ -10,7 +10,7 @@ import app.pengwa.pengWa
  * 被碰一方：系统在对方 SELECT 我们的某个 AID 时拉起本服务（屏幕需亮着）。
  *  - 私有 AID：两边都装了 App 时的双向交换，见 [ApduHandler]；
  *  - 标准 NDEF AID：当作一张标签被任何手机读取，见 [T4tEmulator]。
- * 两者都只在 NFC 页的“出示”角色响应；其余时候拒绝命令并清掉旧会话。
+ * 两者都只在 碰一碰 / 扫码页的“出示”角色响应；其余时候拒绝命令并清掉旧会话。
  */
 class PengWaHostApduService : HostApduService() {
     private lateinit var router: CardRouter

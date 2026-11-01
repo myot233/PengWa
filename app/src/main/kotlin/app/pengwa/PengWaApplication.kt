@@ -30,7 +30,7 @@ class PengWaApplication : Application() {
     }
 
     /**
-     * 主页当前停在哪种交换方式（NFC / 蓝牙 / 二维码 / 都不是）。滑到哪个就只用哪个，其余全部关闭。
+     * 主页当前停在哪一页（面对面 / 蓝牙 / 都不是）。面对面页同时提供 NFC 与扫码。
      * NFC 服务、蓝牙总控、NFC 前台调度都读它。
      */
     val exchangeMode = ExchangeModeState()
