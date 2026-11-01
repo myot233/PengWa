@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   render:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Check out preview source
@@ -26,8 +26,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Install Android SDK packages
-        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          packages: 'platform-tools platforms;android-37.0 build-tools;36.0.0'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
       - name: Check image publisher
         run: node --test scripts/test-publish-previews.mjs
       - name: Check gallery generator
