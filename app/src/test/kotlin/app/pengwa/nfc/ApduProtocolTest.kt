@@ -1,6 +1,8 @@
 package app.pengwa.nfc
 
 import app.pengwa.ble.encodeIdentity
+import app.pengwa.exchange.ExchangeMode
+import app.pengwa.exchange.ExchangeModeState
 import app.pengwa.identity.Identity
 import java.util.UUID
 import kotlin.test.Test
@@ -139,6 +141,44 @@ class ApduProtocolTest {
     // ------------------------------------------------------------ 两端对接：一次完整的碰触
 
     @Test
+    fun `出示端可交换 切到读取或离开页面后不再提供名片`() {
+        val state = ExchangeModeState()
+        val received = mutableListOf<Identity>()
+        val card = CardRouter(
+            exchange = ApduHandler(identityProvider = { bob }, onPeer = { received += it }),
+            tag = T4tEmulator(message = { NdefMessages.mimeMessage(encodeIdentity(bob)) }, armed = { true }),
+            session = { state.nfcDisplaySession },
+        )
+
+        state.set(ExchangeMode.NfcDisplay)
+        assertEquals(ExchangeResult.Peer(bob), runInitiator(alice, card::process))
+        assertEquals(listOf(alice), received)
+
+        listOf(ExchangeMode.NfcRead, ExchangeMode.Bluetooth, ExchangeMode.Qr, ExchangeMode.None).forEach {
+            state.set(it)
+            assertEquals(ExchangeResult.NotCompatible, runInitiator(alice, card::process))
+        }
+        assertEquals(listOf(alice), received)
+    }
+
+    @Test
+    fun `角色切换会终止已经 SELECT 的卡会话`() {
+        var displaying = true
+        val received = mutableListOf<Identity>()
+        val card = CardRouter(
+            exchange = handlerFor(bob, received),
+            tag = T4tEmulator(message = { NdefMessages.mimeMessage(encodeIdentity(bob)) }, armed = { true }),
+            session = { if (displaying) 0L else null },
+        )
+        assertContentEquals(ApduProtocol.SW_OK, card.process(ApduProtocol.selectCommand()))
+        displaying = false
+        assertContentEquals(ApduProtocol.SW_FILE_NOT_FOUND, card.process(ApduProtocol.exchangeCommand(encodeIdentity(alice))))
+        displaying = true
+        assertContentEquals(ApduProtocol.SW_CONDITIONS_NOT_SATISFIED, card.process(ApduProtocol.exchangeCommand(encodeIdentity(alice))))
+        assertTrue(received.isEmpty())
+    }
+
+    @Test
     fun `一次碰触双方互换名片`() {
         val bobReceived = mutableListOf<Identity>()
         val bobCard = handlerFor(bob, bobReceived) // Bob 的手机被碰（HCE）
@@ -148,6 +188,33 @@ class ApduProtocolTest {
 
         assertEquals(ExchangeResult.Peer(bob), result)   // Alice 拿到 Bob 的名片
         assertEquals(listOf(alice), bobReceived)         // Bob 也拿到了 Alice 的名片
+    }
+
+    @Test
+    fun `离开再进入出示角色时旧会话不能复活`() {
+        val state = ExchangeModeState()
+        val received = mutableListOf<Identity>()
+        val card = CardRouter(
+            exchange = handlerFor(bob, received),
+            tag = T4tEmulator(message = { NdefMessages.mimeMessage(encodeIdentity(bob)) }, armed = { true }),
+            session = { state.nfcDisplaySession },
+        )
+        state.set(ExchangeMode.NfcDisplay)
+        assertContentEquals(ApduProtocol.SW_OK, card.process(ApduProtocol.selectCommand()))
+        state.set(ExchangeMode.None)
+        state.set(ExchangeMode.NfcDisplay)
+
+        assertContentEquals(ApduProtocol.SW_CONDITIONS_NOT_SATISFIED, card.process(ApduProtocol.exchangeCommand(encodeIdentity(alice))))
+        assertTrue(received.isEmpty())
+        assertEquals(ExchangeResult.Peer(bob), runInitiator(alice, card::process))
+
+        val selectTag = byteArrayOf(0x00, 0xA4.toByte(), 0x04, 0x00, 0x07) + T4tEmulator.AID + byteArrayOf(0)
+        val selectFile = byteArrayOf(0x00, 0xA4.toByte(), 0x00, 0x00, 0x02, 0xE1.toByte(), 0x03)
+        assertContentEquals(ApduProtocol.SW_OK, card.process(selectTag))
+        assertContentEquals(ApduProtocol.SW_OK, card.process(selectFile))
+        state.set(ExchangeMode.NfcRead)
+        state.set(ExchangeMode.NfcDisplay)
+        assertContentEquals(ApduProtocol.SW_CONDITIONS_NOT_SATISFIED, card.process(byteArrayOf(0x00, 0xB0.toByte(), 0, 0, 2)))
     }
 
     @Test

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * 主页当前停留在哪一种交换方式。**滑到哪个就只用哪个**：其余方式一律关闭。
  * [None] 表示不在主页（切到别的页、退到后台、息屏、正在改名），此时所有交换方式都不工作。
  */
-enum class ExchangeMode { None, Nfc, Bluetooth, Qr }
+enum class ExchangeMode { None, NfcDisplay, NfcRead, Bluetooth, Qr }
 
 /**
  * 当前交换方式的全应用共享状态。界面写入，NFC 服务、蓝牙总控、前台调度读取。
@@ -17,10 +17,18 @@ enum class ExchangeMode { None, Nfc, Bluetooth, Qr }
 class ExchangeModeState {
     private val _mode = MutableStateFlow(ExchangeMode.None)
     val mode: StateFlow<ExchangeMode> = _mode.asStateFlow()
+    private var displayGeneration = 0L
+
+    /** 当前出示会话编号；未出示时为 null。界面线程写入，HCE 可跨线程读取。 */
+    @Volatile
+    var nfcDisplaySession: Long? = null
+        private set
 
     val current: ExchangeMode get() = _mode.value
 
     fun set(mode: ExchangeMode) {
+        if (_mode.value == mode) return
+        nfcDisplaySession = if (mode == ExchangeMode.NfcDisplay) ++displayGeneration else null
         _mode.value = mode
     }
 

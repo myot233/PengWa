@@ -48,8 +48,8 @@ const val PAGE_BLUETOOTH = 1
 const val PAGE_QR = 2
 private const val PAGE_COUNT = 3
 
-private fun modeForPage(page: Int) = when (page) {
-    PAGE_NFC -> ExchangeMode.Nfc
+private fun modeForPage(page: Int, nfcRole: ExchangeMode) = when (page) {
+    PAGE_NFC -> nfcRole
     PAGE_BLUETOOTH -> ExchangeMode.Bluetooth
     else -> ExchangeMode.Qr
 }
@@ -129,6 +129,7 @@ private fun ExchangePager(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { PAGE_COUNT })
+    var nfcRole by rememberSaveable { mutableStateOf(ExchangeMode.NfcDisplay) }
     val titles = listOf(R.string.page_nfc, R.string.page_bluetooth, R.string.page_qr)
 
     // 以"停稳"的那一页为准，滑动过程中经过的页不会被启用
@@ -137,8 +138,8 @@ private fun ExchangePager(
 
     // 滑到哪个就只用哪个；离开主页、退到后台、息屏都回到"都不用"
     val modeState = context.pengWa.exchangeMode
-    LifecycleResumeEffect(settled) {
-        modeState.set(modeForPage(settled))
+    LifecycleResumeEffect(settled, nfcRole) {
+        modeState.set(modeForPage(settled, nfcRole))
         onPauseOrDispose { modeState.set(ExchangeMode.None) }
     }
 
@@ -158,7 +159,11 @@ private fun ExchangePager(
         }
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
             when (page) {
-                PAGE_NFC -> NfcPage()
+                PAGE_NFC -> NfcPage(
+                    role = nfcRole,
+                    onRoleChange = { nfcRole = it },
+                    onShowQr = { scope.launch { pagerState.animateScrollToPage(PAGE_QR) } },
+                )
                 PAGE_BLUETOOTH -> BluetoothPage()
                 else -> QrPage(identity = identity, onMessage = onMessage)
             }
