@@ -16,13 +16,13 @@ class ExchangeModeStateTest {
     @Test
     fun `同一时刻只有一种方式生效`() {
         val state = ExchangeModeState()
-        state.set(ExchangeMode.Nfc)
-        assertTrue(state.isActive(ExchangeMode.Nfc))
+        state.set(ExchangeMode.NfcDisplay)
+        assertTrue(state.isActive(ExchangeMode.NfcDisplay))
         assertFalse(state.isActive(ExchangeMode.Bluetooth))
         assertFalse(state.isActive(ExchangeMode.Qr))
 
         state.set(ExchangeMode.Bluetooth)
-        assertFalse(state.isActive(ExchangeMode.Nfc))
+        assertFalse(state.isActive(ExchangeMode.NfcDisplay))
         assertTrue(state.isActive(ExchangeMode.Bluetooth))
     }
 

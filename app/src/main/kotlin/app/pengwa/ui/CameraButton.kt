@@ -66,11 +66,19 @@ fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
         if (granted) launchCamera() else onMessage(context.getString(R.string.camera_permission_denied))
     }
 
-    ExtendedFloatingActionButton(
+    CameraButtonContent(
         modifier = modifier,
         onClick = {
             if (hasCameraPermission(context)) launchCamera() else permissionLauncher.launch(Manifest.permission.CAMERA)
         },
+    )
+}
+
+@Composable
+internal fun CameraButtonContent(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ExtendedFloatingActionButton(
+        modifier = modifier,
+        onClick = onClick,
         icon = { Text("📷") },
         text = { Text(stringResource(R.string.camera_button)) },
     )

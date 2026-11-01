@@ -7,7 +7,7 @@ import android.util.Log
 import app.pengwa.pengWa
 import java.io.IOException
 
-/** 碰别人一方：拿到前台调度送来的 Tag，在 IsoDep 上跑 [runInitiator]。会阻塞，必须在后台线程调用。 */
+/** 读取一方：拿到 Reader Mode 回调的 Tag，在 IsoDep 上跑 [runInitiator]。会阻塞，必须在后台线程调用。 */
 class NfcTagExchanger(private val context: Context) {
 
     fun exchange(tag: Tag): ExchangeResult {
@@ -19,7 +19,13 @@ class NfcTagExchanger(private val context: Context) {
         val result = try {
             isoDep.connect()
             isoDep.timeout = TIMEOUT_MS
-            runInitiator(me) { isoDep.transceive(it) }
+            runInitiator(me) { command ->
+                val stage = if (ApduProtocol.isSelect(command)) "SELECT private AID" else "EXCHANGE"
+                Log.d(TAG, "reader $stage")
+                isoDep.transceive(command).also { response ->
+                    Log.d(TAG, "reader $stage success=${ApduProtocol.isSuccess(response)}")
+                }
+            }
         } catch (e: IOException) {
             // 碰的时间太短、手机移开了
             ExchangeResult.Failed("连接中断：${e.message}")

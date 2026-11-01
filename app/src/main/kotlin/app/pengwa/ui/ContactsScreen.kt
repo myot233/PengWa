@@ -31,6 +31,17 @@ fun ContactsScreen(
 ) {
     val contacts by viewModel.contacts.collectAsStateWithLifecycle()
 
+    ContactsScreenContent(contacts = contacts, modifier = modifier) { buttonModifier ->
+        CameraButton(onMessage = onMessage, modifier = buttonModifier)
+    }
+}
+
+@Composable
+internal fun ContactsScreenContent(
+    contacts: List<Contact>,
+    modifier: Modifier = Modifier,
+    cameraButton: @Composable (Modifier) -> Unit,
+) {
     Box(modifier = modifier.fillMaxSize()) {
         if (contacts.isEmpty()) {
             Text(
@@ -51,10 +62,7 @@ fun ContactsScreen(
             }
         }
 
-        CameraButton(
-            onMessage = onMessage,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
+        cameraButton(Modifier.align(Alignment.BottomEnd).padding(16.dp))
     }
 }
 

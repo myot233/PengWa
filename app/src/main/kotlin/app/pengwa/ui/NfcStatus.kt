@@ -1,9 +1,7 @@
 package app.pengwa.ui
 
 import android.content.Context
-import android.content.Intent
 import android.nfc.NfcAdapter
-import android.provider.Settings
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,16 +19,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.pengwa.R
 
-private enum class NfcState { Unsupported, Disabled, Ready }
+internal enum class NfcState { Unsupported, Disabled, Ready }
 
 private fun nfcState(context: Context): NfcState {
     val adapter = NfcAdapter.getDefaultAdapter(context) ?: return NfcState.Unsupported
     return if (adapter.isEnabled) NfcState.Ready else NfcState.Disabled
 }
 
-/** 名片页上的一行 NFC 提示：不支持 / 未开启（可跳设置）/ 已就绪。从系统设置回来会自动刷新。 */
 @Composable
-fun NfcStatus(modifier: Modifier = Modifier) {
+internal fun rememberNfcState(): NfcState {
     val context = LocalContext.current
     var state by remember { mutableStateOf(nfcState(context)) }
     LifecycleResumeEffect(Unit) {
@@ -38,6 +35,15 @@ fun NfcStatus(modifier: Modifier = Modifier) {
         onPauseOrDispose { }
     }
 
+    return state
+}
+
+@Composable
+internal fun NfcStatus(
+    state: NfcState,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     when (state) {
         NfcState.Unsupported -> StatusText(R.string.nfc_unsupported, modifier)
         NfcState.Ready -> StatusText(R.string.nfc_ready, modifier)
@@ -47,7 +53,7 @@ fun NfcStatus(modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
             )
-            TextButton(onClick = { context.startActivity(Intent(Settings.ACTION_NFC_SETTINGS)) }) {
+            TextButton(onClick = onOpenSettings) {
                 Text(stringResource(R.string.nfc_open_settings))
             }
         }

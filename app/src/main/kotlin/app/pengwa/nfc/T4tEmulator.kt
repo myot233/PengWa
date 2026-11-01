@@ -130,18 +130,34 @@ class T4tEmulator(
 class CardRouter(
     private val exchange: ApduHandler,
     private val tag: T4tEmulator,
+    private val session: () -> Long? = { 0L },
 ) {
     private enum class Active { None, Exchange, Tag }
 
     private var active = Active.None
+    private var currentSession: Long? = null
 
     fun reset() {
+        currentSession = null
+        resetApplications()
+    }
+
+    private fun resetApplications() {
         active = Active.None
         exchange.reset()
         tag.reset()
     }
 
     fun process(command: ByteArray): ByteArray {
+        val nextSession = session()
+        if (nextSession == null) {
+            reset()
+            return ApduProtocol.SW_FILE_NOT_FOUND
+        }
+        if (nextSession != currentSession) {
+            resetApplications()
+            currentSession = nextSession
+        }
         if (ApduProtocol.isSelect(command)) return selectApplication(command)
         return when (active) {
             Active.Exchange -> exchange.process(command)
@@ -152,7 +168,7 @@ class CardRouter(
 
     private fun selectApplication(command: ByteArray): ByteArray {
         val aid = ApduProtocol.commandData(command)
-        reset()
+        resetApplications()
         return when {
             aid != null && aid.contentEquals(ApduProtocol.AID) -> {
                 active = Active.Exchange

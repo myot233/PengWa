@@ -58,8 +58,13 @@
 
     <!-- NFC 与相遇 -->
     <string name="nfc_page_title">碰一碰</string>
-    <string name="nfc_page_hint">停留在本页，别人才能碰到你；滑走就关闭。\n对方装了碰碰娃、没打开时，也会被自动拉起。</string>
-    <string name="nfc_ready">和另一台手机背靠背碰一下\n对方也切到本页最稳</string>
+    <string name="nfc_page_hint">双方保持本页打开，一方出示、一方读取。\n手机背靠背贴近 NFC 感应区；滑走就关闭。</string>
+    <string name="nfc_ready">NFC 已开启</string>
+    <string name="nfc_role_display">出示</string>
+    <string name="nfc_role_read">读取</string>
+    <string name="nfc_display_hint">请让对方选择“读取”，再碰一下交换名片。</string>
+    <string name="nfc_read_hint">请让对方保持“出示”，再碰一下交换名片。</string>
+    <string name="nfc_show_qr">碰不到？用二维码交换</string>
     <string name="nfc_unsupported">此设备不支持 NFC</string>
     <string name="nfc_disabled">NFC 未开启</string>
     <string name="nfc_open_settings">去开启</string>

@@ -39,7 +39,7 @@
 
 | 子页 | 要求 |
 |---|---|
-| NFC | 切到这页，别人就可以碰一碰 |
+| NFC | 一方选“出示”，另一方选“读取”，背靠背碰一碰；也可直接切到二维码 |
 | 蓝牙 | 近场的人互相发现，**做成一个列表，选某个人进行互换** |
 | 二维码 | 展示自己的二维码，也可以扫对方的；**自动拉高并锁定亮度，切走自动恢复**，免得亮度太低对方扫不到 |
 
@@ -100,7 +100,8 @@
 
 - **身份**：GUID + 自定义显示名；显示名按 UTF-8 字节限 **32 字节**（约 10 个汉字或 8 个 emoji），
   拒绝控制字符、零宽字符、方向覆盖符、除普通空格外的空白等；ZWJ 连接的复合 emoji 不可用。
-- **NFC 碰一碰**：停在 NFC 页时才响应；一次碰触双方互换；对方装了 App 但没打开，也会被自动拉起。
+- **NFC 碰一碰**：双方打开 NFC 页，一方“出示”、一方“读取”，一次碰触互换名片。出示端保留标准 NDEF 标签兼容入口，
+  可由系统拉起已安装的 App 收下名片；是否拉起仍受系统分发策略影响。读取端直接选择私有 AID，减少标准标签／钱包争用。
 - **蓝牙**：停在蓝牙页时广播并扫描，列出附近的人，点谁才向谁**申请**，对方同意后才交换。
 - **后台蓝牙广播**（设置里，默认关闭）：前台服务保活，只广播不扫描；有人申请时前台弹对话框、后台发带
   "同意 / 拒绝"按钮的通知。
@@ -118,8 +119,8 @@
 ```
 app/src/main/kotlin/app/pengwa/
 ├── PengWaApplication.kt        应用单例：身份、集邮册、相遇记录器、蓝牙总控、当前模式
-├── MainActivity.kt             NFC 前台调度（跟着当前模式开关）、被 NDEF 标签拉起、前后台状态
-├── exchange/ExchangeMode.kt    当前模式（NFC/蓝牙/二维码/都不是）——全应用共享的单一状态
+├── MainActivity.kt             NFC 角色生命周期与读卡回调、被 NDEF 标签拉起、前后台状态
+├── exchange/ExchangeMode.kt    当前模式（NFC 出示/读取、蓝牙、二维码、都不是）——全应用共享的单一状态
 ├── identity/                   身份：模型、存储、显示名规则
 ├── contacts/                   集邮册：SQLite 存储
 ├── meeting/                    相遇记录器（排除自己、10 秒防抖、通知界面）
@@ -140,11 +141,11 @@ docs/                           protocol.md（协议规格）、release.md（发
 
 ## 5. 已经测过的内容
 
-### 5.1 单元测试：148 项，全部通过
+### 5.1 单元测试：151 项，全部通过
 
 | 测试类 | 项数 | 覆盖 |
 |---|---:|---|
-| `nfc.ApduProtocolTest` | 20 | 私有协议；**两端直接对接的整次碰触**；模式开关 |
+| `nfc.ApduProtocolTest` | 23 | 私有协议；**两端直接对接的整次碰触**；模式开关 |
 | `nfc.T4tEmulatorTest` | 18 | 按 NFC Forum 规范的"标准读卡器"读标签；AID 路由 |
 | `ble.GattExchangeSessionsTest` | 17 | 申请—同意状态机、超时、断开、容量 |
 | `ble.NearbyListTest` | 17 | 列表排序、预览重试、等待中、过期移除 |
@@ -186,7 +187,7 @@ docs/                           protocol.md（协议规格）、release.md（发
 
 **以下都没有在真机上实测过，不要当成"已经好用"：**
 
-1. **两部手机之间的真实 NFC 碰触**：默认模式下谁来当读卡方、一次碰触是否稳定只触发一次；
+1. **两部手机之间的真实 NFC 碰触**：“出示／读取”组合能否稳定交换、角色切换与暂停后是否正确恢复，尤其 vivo / 小米的钱包争用；
    iPhone 能否读到安卓模拟的标签。（协议层有单元测试，卡模拟已在系统登记，但没有第二部手机。）
 2. **用相机扫一个真实的二维码**：识别逻辑有单元测试，但测试手机平放，相机只能拍到桌面。
 3. **后台通知上的"同意 / 拒绝"按钮**：通知内容已确认正确，但测试手机开着勿扰、通知被拦截，没能从通知栏点按钮。
@@ -206,7 +207,7 @@ docs/                           protocol.md（协议规格）、release.md（发
 - **ID 是明文**，任何见过你名片的人都可以复制它冒充；目前没有签名或挑战应答，需要时再加。
 - **显示名会被附近的人看到**：停在蓝牙页，或开了"后台蓝牙广播"时，附近的碰碰娃用户能读到你的显示名（ID 仍受申请—同意保护）。
   这一点在设置的开关说明里写明了。
-- 停在 NFC 页时，别人的手机能把你当一张标签读到名片（没有"对方先出示名片"的保护）；二维码谁看到谁就能复制。
+- 停在 NFC 页并选择“出示”时，别人的手机能把你当一张标签读到名片（没有"对方先出示名片"的保护）；二维码谁看到谁就能复制。
 - NFC 私有协议和蓝牙都要求对方**先出示合法名片**才给名片，但协议是公开的，这只是防"随手抄走"，不是安全措施。
 
 ### 平台限制
@@ -253,12 +254,51 @@ docs/                           protocol.md（协议规格）、release.md（发
 
 ```bash
 # 构建与测试
-./gradlew testDebugUnitTest        # 148 项单元测试
+./gradlew testDebugUnitTest        # 151 项单元测试
 ./gradlew assembleDebug            # 调试版
 ./gradlew assembleRelease          # 发布版；有 secrets/keystore.properties 时自动签名
 # 校验签名
 apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
 ```
+
+### Compose Preview 与命令行图片
+
+在 Android Studio 中选择 `debug` 构建变体，打开
+`app/src/debug/kotlin/app/pengwa/ui/UiPreviews.kt`，切换到 **Split / Design** 并执行 **Build & Refresh**。
+也可以只安装 JDK 21 和 Android SDK（platform 37、build-tools 36），通过命令行生成 PNG，无需 Studio、真机或模拟器：
+
+```bash
+bash scripts/render-previews.sh
+```
+
+该命令调用 AGP 9.5 的官方 Compose Screenshot Test Suite，重新渲染图片，再生成
+`app/build/preview-gallery/index.html`、`manifest.json` 和 PNG。浏览器直接打开 `index.html` 即可查看，点击图片可放大。
+原始测试报告位于 `app/build/reports/tests/updateDebugScreenshotTestDefaultTestSuite/index.html`。
+首次运行会下载官方 Layoutlib 运行时；截图功能使用 `0.0.1-alpha16` 引擎，目前仍是实验功能。
+
+预览与截图测试复用同一份界面组件和固定示例数据，覆盖 39 个图片组合：
+
+- NFC：出示、读取、NFC 未开启、不支持 NFC。
+- 蓝牙：未授权、权限被拒绝、蓝牙关闭、搜索中，以及发现／就绪／申请／等待／成功／失败的列表项。
+- 集邮册：空集邮册、长名字和相遇次数、可滚动的列表，包含拍照按钮。
+- 二维码：固定测试身份生成的二维码。
+
+每个场景都有浅色、深色和 320dp 窄屏／1.5 倍字体配置。示例数据仅进入 debug 和截图测试编译产物；
+预览不查询真实硬件、数据库或权限，不会打开相机或交换名片。新增场景时调用接收状态和回调的 `*Content` 组件，
+硬件与生命周期处理保留在外层页面。截图包装入口在 `app/src/screenshotTest/kotlin/app/pengwa/ui/UiScreenshotPreviews.kt`。
+
+### PR 图片附录
+
+`Compose Previews` Action 在 PR 更新时运行并上传 `compose-previews` 附件，包含完整 PNG 和离线 HTML 图集，保留 30 天。
+`Compose Preview Comment` Action 在渲染成功后，将 PNG 发布到专用的 `compose-preview-images` 分支，
+使用固定提交地址将图片内嵌在 PR 评论中，并附上原图集下载和渲染任务链接。后续提交更新同一条机器人评论。
+
+渲染工作流只有读取权限。发表评论的工作流只运行默认分支中的发布代码，核对当前 PR 提交与图片附件来源，
+只发布 PNG，不执行 PR 附件中的脚本或 HTML。适用于 fork PR，无需新增 PAT 或第三方图床。
+
+**首次启用：发表评论的 `workflow_run` 工作流必须先合入仓库默认分支。** 在此之前，PR 可以运行渲染并下载附件，
+自动图片评论会在合并后的后续 PR／提交上启用；本次初始化的图片可由维护者先发布。
+Layoutlib 图片用于检查静态界面，不能替代 `AGENTS.md` 要求的运行中应用截图，真实 NFC／蓝牙与相机行为仍需运行应用验证。
 
 ### 持续集成
 
@@ -279,6 +319,9 @@ main 上的运行依次完成，已落后于 main 的旧提交不会覆盖 Night
 ## 8. 后续计划
 
 - 用**第二部手机**验证真实的 NFC 碰触和手机对手机的蓝牙申请。
+- NFC 修复的双机验收：一方“出示”、一方“读取”，交换后互换角色；分别在切页、退后台、设置中关闭／开启 NFC 后重试。
+  Android 15+ 检查出示端停止轮询、切走后恢复；旧版本只提供前台首选服务。记录 `adb logcat -s PengWaNfc` 与 `dumpsys nfc`，
+  特别核对 vivo / 小米的钱包是否仍被唤起。此修复尚未完成双机真机验证，不能保证所有厂商系统都不弹钱包。
 - **让没装 App 的人也能碰到下载页**：把 NFC 标签的第一条记录换成 `https` 网址并配置 App Links
   （需要域名和发布签名；名片编码不变，只是外面的包装换了）。
 - **照片关联到相遇的娃友**：集邮册里点一个人，看到和 TA 的合影。
