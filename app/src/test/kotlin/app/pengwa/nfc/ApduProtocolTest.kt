@@ -130,12 +130,24 @@ class ApduProtocolTest {
     }
 
     @Test
-    fun `切回 NFC 页后恢复响应`() {
-        var armed = false
-        val handler = ApduHandler(identityProvider = { alice }, onPeer = { }, armed = { armed })
+    fun `面对面页能碰一碰 切到蓝牙或离开后停止响应`() {
+        val mode = ExchangeModeState()
+        val received = mutableListOf<Identity>()
+        val handler = ApduHandler(
+            identityProvider = { alice },
+            onPeer = { received += it },
+            armed = { mode.isActive(ExchangeMode.NfcDisplay) },
+        )
         assertEquals(ExchangeResult.NotCompatible, runInitiator(bob) { handler.process(it) })
-        armed = true
+        mode.set(ExchangeMode.NfcDisplay)
         assertEquals(ExchangeResult.Peer(alice), runInitiator(bob) { handler.process(it) })
+        assertEquals(listOf(bob), received)
+
+        mode.set(ExchangeMode.Bluetooth)
+        assertEquals(ExchangeResult.NotCompatible, runInitiator(bob) { handler.process(it) })
+        mode.set(ExchangeMode.None)
+        assertEquals(ExchangeResult.NotCompatible, runInitiator(bob) { handler.process(it) })
+        assertEquals(listOf(bob), received)
     }
 
     // ------------------------------------------------------------ 两端对接：一次完整的碰触
@@ -154,7 +166,7 @@ class ApduProtocolTest {
         assertEquals(ExchangeResult.Peer(bob), runInitiator(alice, card::process))
         assertEquals(listOf(alice), received)
 
-        listOf(ExchangeMode.NfcRead, ExchangeMode.Bluetooth, ExchangeMode.Qr, ExchangeMode.None).forEach {
+        listOf(ExchangeMode.NfcRead, ExchangeMode.Bluetooth, ExchangeMode.None).forEach {
             state.set(it)
             assertEquals(ExchangeResult.NotCompatible, runInitiator(alice, card::process))
         }

@@ -64,7 +64,7 @@ object ApduProtocol {
 class ApduHandler(
     private val identityProvider: () -> Identity?,
     private val onPeer: (Identity) -> Unit,
-    /** 为 false 时不响应：主页没有停在 NFC 页的时候，别人碰不到我。 */
+    /** 为 false 时不响应：主页没有停在碰一碰 / 扫码页的时候，别人碰不到我。 */
     private val armed: () -> Boolean = { true },
 ) {
     private var selected = false

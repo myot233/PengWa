@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,6 +42,7 @@ fun PengWaRoot(
     identityViewModel: IdentityViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -51,8 +53,7 @@ fun PengWaRoot(
         context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
     }
     var selectedTab by rememberSaveable { mutableIntStateOf(MainActivity.TAB_ME) }
-    // 记住主页停在 NFC / 蓝牙 / 二维码哪一页，切到别的底部页再回来时保持原位
-    var homePage by rememberSaveable { mutableIntStateOf(PAGE_NFC) }
+    var homePage by rememberSaveable { mutableIntStateOf(PAGE_FACE_TO_FACE) }
 
     // 通知栏按钮要求切换到某一页
     LaunchedEffect(requestedTab) {
@@ -63,10 +64,10 @@ fun PengWaRoot(
     }
 
     // 碰到人了（NFC、蓝牙或二维码）：震一下并提示。新事件会顶掉还没消失的旧提示。
-    LaunchedEffect(Unit) {
+    LaunchedEffect(resources) {
         context.pengWa.meetings.events.collectLatest { event ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            snackbarHostState.showSnackbar(context.getString(R.string.meeting_snackbar, event.name))
+            snackbarHostState.showSnackbar(resources.getString(R.string.meeting_snackbar, event.name))
         }
     }
 

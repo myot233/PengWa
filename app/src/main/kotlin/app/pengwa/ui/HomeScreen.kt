@@ -34,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pengwa.R
 import app.pengwa.exchange.ExchangeMode
 import app.pengwa.identity.Identity
@@ -42,20 +41,19 @@ import app.pengwa.identity.NameError
 import app.pengwa.pengWa
 import kotlinx.coroutines.launch
 
-/** 主页内三种交换方式的页序。左右滑动切换，停在哪一页就只用哪一种。 */
-const val PAGE_NFC = 0
+/** NFC 与扫码共用默认页，蓝牙单独一页。 */
+const val PAGE_FACE_TO_FACE = 0
 const val PAGE_BLUETOOTH = 1
-const val PAGE_QR = 2
-private const val PAGE_COUNT = 3
+private const val PAGE_COUNT = 2
 
 private fun modeForPage(page: Int, nfcRole: ExchangeMode) = when (page) {
-    PAGE_NFC -> nfcRole
+    PAGE_FACE_TO_FACE -> nfcRole
     PAGE_BLUETOOTH -> ExchangeMode.Bluetooth
-    else -> ExchangeMode.Qr
+    else -> ExchangeMode.None
 }
 
 /**
- * 主页：顶部是我的名片，下面是 NFC / 蓝牙 / 二维码三个可左右滑动的页。
+ * 主页：顶部是我的名片，下面是碰一碰（NFC + 扫码）/ 蓝牙两个可左右滑动的页。
  * 没有设置显示名或正在改名时，显示设置表单。三种方式交换的是同一张名片。
  */
 @Composable
@@ -128,24 +126,22 @@ private fun ExchangePager(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { PAGE_COUNT })
+    val pagerState = rememberPagerState(
+        initialPage = if (initialPage == PAGE_BLUETOOTH) PAGE_BLUETOOTH else PAGE_FACE_TO_FACE,
+        pageCount = { PAGE_COUNT },
+    )
     var nfcRole by rememberSaveable { mutableStateOf(ExchangeMode.NfcDisplay) }
-    val titles = listOf(R.string.page_nfc, R.string.page_bluetooth, R.string.page_qr)
+    val titles = listOf(R.string.page_face_to_face, R.string.page_bluetooth)
 
     // 以"停稳"的那一页为准，滑动过程中经过的页不会被启用
     val settled = pagerState.settledPage
     LaunchedEffect(settled) { onPageSettled(settled) }
 
-    // 滑到哪个就只用哪个；离开主页、退到后台、息屏都回到"都不用"
     val modeState = context.pengWa.exchangeMode
     LifecycleResumeEffect(settled, nfcRole) {
         modeState.set(modeForPage(settled, nfcRole))
         onPauseOrDispose { modeState.set(ExchangeMode.None) }
     }
-
-    // 停在二维码页时自动拉高并锁定亮度（含保持常亮），切走、退到后台都会自动恢复
-    val mode by modeState.mode.collectAsStateWithLifecycle()
-    BrightnessLock(enabled = mode == ExchangeMode.Qr)
 
     Column(modifier = modifier) {
         PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
@@ -159,13 +155,14 @@ private fun ExchangePager(
         }
         HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { page ->
             when (page) {
-                PAGE_NFC -> NfcPage(
+                PAGE_FACE_TO_FACE -> FaceToFacePage(
+                    identity = identity,
+                    selected = settled == page,
                     role = nfcRole,
                     onRoleChange = { nfcRole = it },
-                    onShowQr = { scope.launch { pagerState.animateScrollToPage(PAGE_QR) } },
+                    onMessage = onMessage,
                 )
                 PAGE_BLUETOOTH -> BluetoothPage()
-                else -> QrPage(identity = identity, onMessage = onMessage)
             }
         }
     }

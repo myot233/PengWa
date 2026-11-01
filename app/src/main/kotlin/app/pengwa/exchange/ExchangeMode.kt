@@ -5,10 +5,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * 主页当前停留在哪一种交换方式。**滑到哪个就只用哪个**：其余方式一律关闭。
+ * 面对面页提供 NFC 出示／读取和二维码，蓝牙页单独启用蓝牙。
  * [None] 表示不在主页（切到别的页、退到后台、息屏、正在改名），此时所有交换方式都不工作。
  */
-enum class ExchangeMode { None, NfcDisplay, NfcRead, Bluetooth, Qr }
+enum class ExchangeMode { None, NfcDisplay, NfcRead, Bluetooth }
 
 /**
  * 当前交换方式的全应用共享状态。界面写入，NFC 服务、蓝牙总控、前台调度读取。

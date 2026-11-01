@@ -14,22 +14,30 @@ class ExchangeModeStateTest {
     }
 
     @Test
-    fun `同一时刻只有一种方式生效`() {
+    fun `面对面页与蓝牙页互斥 切回后恢复面对面交换`() {
         val state = ExchangeModeState()
         state.set(ExchangeMode.NfcDisplay)
         assertTrue(state.isActive(ExchangeMode.NfcDisplay))
         assertFalse(state.isActive(ExchangeMode.Bluetooth))
-        assertFalse(state.isActive(ExchangeMode.Qr))
+
+        state.set(ExchangeMode.NfcRead)
+        assertFalse(state.isActive(ExchangeMode.NfcDisplay))
+        assertTrue(state.isActive(ExchangeMode.NfcRead))
+        assertFalse(state.isActive(ExchangeMode.Bluetooth))
 
         state.set(ExchangeMode.Bluetooth)
         assertFalse(state.isActive(ExchangeMode.NfcDisplay))
         assertTrue(state.isActive(ExchangeMode.Bluetooth))
+
+        state.set(ExchangeMode.NfcDisplay)
+        assertTrue(state.isActive(ExchangeMode.NfcDisplay))
+        assertFalse(state.isActive(ExchangeMode.Bluetooth))
     }
 
     @Test
     fun `离开主页回到都不用`() {
         val state = ExchangeModeState()
-        state.set(ExchangeMode.Qr)
+        state.set(ExchangeMode.NfcDisplay)
         state.set(ExchangeMode.None)
         ExchangeMode.entries.filter { it != ExchangeMode.None }.forEach { assertFalse(state.isActive(it)) }
     }

@@ -15,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import app.pengwa.R
 import app.pengwa.photo.PhotoStorage
@@ -32,6 +33,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     // 相机在前台时本应用可能被系统回收；保存临时文件路径，回来后才能收尾
     var pendingPath by rememberSaveable { mutableStateOf<String?>(null) }
@@ -46,7 +48,7 @@ fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
         }
         scope.launch {
             val saved = withContext(Dispatchers.IO) { PhotoStorage.saveToGallery(context, file) }
-            onMessage(context.getString(if (saved) R.string.photo_saved else R.string.photo_create_failed))
+            onMessage(resources.getString(if (saved) R.string.photo_saved else R.string.photo_create_failed))
         }
     }
 
@@ -58,12 +60,12 @@ fun CameraButton(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
         } catch (_: ActivityNotFoundException) {
             pendingPath = null
             PhotoStorage.discard(file)
-            onMessage(context.getString(R.string.camera_not_found))
+            onMessage(resources.getString(R.string.camera_not_found))
         }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) launchCamera() else onMessage(context.getString(R.string.camera_permission_denied))
+        if (granted) launchCamera() else onMessage(resources.getString(R.string.camera_permission_denied))
     }
 
     CameraButtonContent(

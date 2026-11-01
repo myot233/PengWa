@@ -47,14 +47,15 @@ internal class NfcPreviewProvider : PreviewParameterProvider<NfcPreviewState> {
 
 @PengWaPreviews
 @Composable
-internal fun NfcPagePreview(@PreviewParameter(NfcPreviewProvider::class) sample: NfcPreviewState) {
+internal fun FaceToFacePagePreview(@PreviewParameter(NfcPreviewProvider::class) sample: NfcPreviewState) {
     var role by remember(sample) { mutableStateOf(sample.role) }
     PreviewSurface {
-        NfcPageContent(
+        FaceToFacePageContent(
+            identity = Identity(UUID(0L, 1L), "小棉花"),
             role = role,
             nfcState = sample.state,
             onRoleChange = { role = it },
-            onShowQr = {},
+            onScan = {},
             onOpenNfcSettings = {},
         )
     }
@@ -142,15 +143,4 @@ private val previewContacts = List(20) { index ->
         lastMetAt = 1_793_462_400_000L + index * 3_600_000L,
         metCount = if (index == 1) 999 else index + 1,
     )
-}
-
-@PengWaPreviews
-@Composable
-internal fun QrPagePreview() {
-    PreviewSurface {
-        QrPageContent(
-            identity = Identity(UUID(0L, 1L), "小棉花"),
-            onScan = {},
-        )
-    }
 }
