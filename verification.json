@@ -1,0 +1,17 @@
+{
+  "unit_tests": 155,
+  "test_failures": 0,
+  "gallery_pngs": 54,
+  "lint_errors": 0,
+  "lint_warnings": 12,
+  "release_kotlin": "passed",
+  "qr_preview_decode_count": 8,
+  "preview_publisher_node_tests": 10,
+  "gallery_python_tests": 4,
+  "runtime_checks": 18,
+  "runtime_checks_complete": true,
+  "source_commit": "c7da70c578275a3ba126507941a2fa985a68dda3",
+  "ui_commit": "82e866d2db9d9c864fa85e35d34159534e6c63b8",
+  "apk_contains_phosphor_license": true,
+  "native_qr_decode_count": 10
+}
