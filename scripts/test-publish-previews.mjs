@@ -33,11 +33,13 @@ function api({ comments = [], heads = [head], event = 'pull_request', conclusion
   const calls = [];
   let headIndex = 0;
   const pull = () => ({ number: 4, state: 'open', head: { sha: heads[Math.min(headIndex++, heads.length - 1)], repo: { full_name: sourceRepo } }, base: { repo: { full_name: 'xh321/PengWa' } } });
-  const run = { id: 9, name: 'Compose Previews', path: '.github/workflows/compose-previews.yml', event, conclusion, head_sha: head, head_repository: { full_name: 'contributor/PengWa', id: 2 }, repository: { full_name: 'xh321/PengWa' }, pull_requests: [] };
+  const run = { id: 9, name: 'Compose Previews', path: '.github/workflows/compose-previews.yml', event, conclusion, head_sha: head, head_branch: 'feat/compose-previews', head_repository: { full_name: 'contributor/PengWa', id: 2 }, repository: { full_name: 'xh321/PengWa' }, pull_requests: [] };
   const artifact = { id: 7, name: 'compose-previews', expired: false, size_in_bytes: 1024, workflow_run: { id: 9, head_sha: head, head_repository_id: 2 } };
   const rest = {
-    pulls: { get: async args => { calls.push(['pull', args]); return { data: pull() }; } },
-    repos: { listPullRequestsAssociatedWithCommit: async () => ({ data: [{ number: 4 }] }) },
+    pulls: {
+      get: async args => { calls.push(['pull', args]); return { data: pull() }; },
+      list: async args => ({ data: args.state === 'open' && args.head === 'contributor:feat/compose-previews' ? [{ number: 4 }] : [] }),
+    },
     actions: {
       getWorkflowRun: async () => ({ data: run }),
       listWorkflowRunArtifacts: async () => ({ data: { artifacts: [artifact] } }),
@@ -155,7 +157,7 @@ test('head moving during publication prevents an obsolete comment update', async
   assert.ok(!calls.some(([name]) => ['createComment', 'updateComment'].includes(name)));
 });
 
-test('fork workflow run finds its PR even when pull_requests is empty', async () => {
+test('fork workflow run finds its PR when run and commit associations are empty', async () => {
   const { github, calls } = api();
   const result = await publishWorkflowRun({ github, context: { repo: { owner: 'xh321', repo: 'PengWa' }, payload: { workflow_run: { id: 9 } } } });
   assert.equal(result.status, 'published');

@@ -205,9 +205,10 @@ export async function publishWorkflowRun({ github, context }) {
   if (run.name !== 'Compose Previews' || run.path?.split('@')[0] !== '.github/workflows/compose-previews.yml' || run.event !== 'pull_request' || run.conclusion !== 'success' || run.repository.full_name !== `${owner}/${repo}`) {
     return { status: 'ignored' };
   }
-  if (!shaPattern.test(run.head_sha) || !run.head_repository?.full_name) throw new Error('Missing source provenance');
-  const associated = await github.paginate(github.rest.repos.listPullRequestsAssociatedWithCommit, { owner, repo, commit_sha: run.head_sha, per_page: 100 });
-  const numbers = new Set([...(run.pull_requests ?? []).map(pull => pull.number), ...associated.map(pull => pull.number)]);
+  if (!shaPattern.test(run.head_sha) || !run.head_repository?.full_name || typeof run.head_branch !== 'string' || !run.head_branch) throw new Error('Missing source provenance');
+  const sourceOwner = run.head_repository.full_name.split('/')[0];
+  const openPulls = await github.paginate(github.rest.pulls.list, { owner, repo, state: 'open', head: `${sourceOwner}:${run.head_branch}`, per_page: 100 });
+  const numbers = new Set([...(run.pull_requests ?? []).map(pull => pull.number), ...openPulls.map(pull => pull.number)]);
   const candidates = [];
   for (const pullNumber of numbers) {
     const candidate = { github, owner, repo, pullNumber, headSha: run.head_sha, headRepository: run.head_repository.full_name };
