@@ -300,6 +300,20 @@ bash scripts/render-previews.sh
 自动图片评论会在合并后的后续 PR／提交上启用；本次初始化的图片可由维护者先发布。
 Layoutlib 图片用于检查静态界面，不能替代 `AGENTS.md` 要求的运行中应用截图，真实 NFC／蓝牙与相机行为仍需运行应用验证。
 
+### 持续集成
+
+GitHub Actions 会在向 `main` 推送、提交或更新 PR 时构建 Debug APK 并运行单元测试，也可以在
+Actions 页手动运行 `Build and test`。CI 使用 JDK 21 和仓库内的 Gradle Wrapper，自动安装所需的 Android SDK。
+
+成功后可在该次运行的 Artifacts 中下载 `pengwa-debug-apk`；单元测试报告 `unit-test-reports` 在测试失败时也会上传
+（前提是已生成报告）。两类产物均保留 14 天。
+CI 调试包使用临时调试签名，跨次运行的 APK 可能无法覆盖安装；卸载旧调试版会清除该调试版的本地数据。
+
+`main` 的 CI 成功后会自动更新 [Nightly 预发布](https://github.com/xh321/PengWa/releases/tag/nightly)，
+安装包名为 `pengwa-nightly-<构建号>-<重跑次数>.apk`，页面内提供对应的下载、提交和 CI 运行链接。
+在 `main` 上手动运行 CI 也会发布；PR 只构建和测试。新包上传成功后才更新 Nightly 并清理上一份安装包，上传失败会保留旧包。
+main 上的运行依次完成，已落后于 main 的旧提交不会覆盖 Nightly。Nightly 仍使用上述 Debug 包和临时调试签名。
+
 ---
 
 ## 8. 后续计划

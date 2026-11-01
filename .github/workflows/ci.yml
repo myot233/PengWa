@@ -1,0 +1,134 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          packages: 'platform-tools platforms;android-37.0 build-tools;36.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6
+
+      - name: Build debug APK and run unit tests
+        run: bash ./gradlew --no-daemon --stacktrace --continue :app:assembleDebug :app:testDebugUnitTest
+
+      - name: Upload unit test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: unit-test-reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/test-results/testDebugUnitTest/
+          retention-days: 14
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pengwa-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-nightly:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download tested APK
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: pengwa-debug-apk
+          path: nightly
+
+      - name: Publish nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          main_sha=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$main_sha" != "$GITHUB_SHA" ]]; then
+            echo "main has advanced; skipping this older nightly build."
+            exit 0
+          fi
+
+          asset_name="pengwa-nightly-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}.apk"
+          apk="nightly/$asset_name"
+          mv nightly/app-debug.apk "$apk"
+          notes="$RUNNER_TEMP/nightly-notes.md"
+          {
+            printf 'main 分支通过 CI 后自动更新的 Debug 构建。\n\n'
+            printf '下载：[%s](%s/%s/releases/download/nightly/%s)\n' \
+              "$asset_name" "$GITHUB_SERVER_URL" "$GH_REPO" "$asset_name"
+            printf '提交：[%s](%s/%s/commit/%s)\n' \
+              "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GH_REPO" "$GITHUB_SHA"
+            printf '构建：[CI #%s](%s/%s/actions/runs/%s)\n\n' \
+              "$GITHUB_RUN_NUMBER" "$GITHUB_SERVER_URL" "$GH_REPO" "$GITHUB_RUN_ID"
+            printf '包名为 app.pengwa.debug，可与正式版共存。CI 使用临时调试签名，跨次安装可能需要先卸载旧调试版；卸载会清除旧调试版的本地数据。\n'
+          } > "$notes"
+
+          update_nightly_tag() {
+            if gh api "repos/$GH_REPO/git/ref/tags/nightly" --silent 2> "$RUNNER_TEMP/nightly-tag-error"; then
+              gh api --method PATCH "repos/$GH_REPO/git/refs/tags/nightly" -f sha="$GITHUB_SHA" -F force=true --silent
+            elif grep -q '(HTTP 404)' "$RUNNER_TEMP/nightly-tag-error"; then
+              gh api --method POST "repos/$GH_REPO/git/refs" -f ref=refs/tags/nightly -f sha="$GITHUB_SHA" --silent
+            else
+              cat "$RUNNER_TEMP/nightly-tag-error" >&2
+              exit 1
+            fi
+          }
+
+          if gh api "repos/$GH_REPO/releases/tags/nightly" --silent 2> "$RUNNER_TEMP/nightly-release-error"; then
+            old_assets=$(gh release view nightly --json assets --jq '.assets[].name')
+            gh release upload nightly "$apk"
+            update_nightly_tag
+            gh release edit nightly --title Nightly --notes-file "$notes" --prerelease --latest=false --draft=false
+
+            while IFS= read -r old_asset; do
+              case "$old_asset" in
+                pengwa-nightly.apk|pengwa-nightly-*.apk)
+                  gh release delete-asset nightly "$old_asset" --yes
+                  ;;
+              esac
+            done <<< "$old_assets"
+          elif grep -q '(HTTP 404)' "$RUNNER_TEMP/nightly-release-error"; then
+            update_nightly_tag
+            gh release create nightly "$apk" --verify-tag \
+              --title Nightly --notes-file "$notes" --prerelease --latest=false
+          else
+            cat "$RUNNER_TEMP/nightly-release-error" >&2
+            exit 1
+          fi
