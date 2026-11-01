@@ -143,7 +143,7 @@ docs/                           protocol.md（协议规格）、release.md（发
 
 ## 5. 已经测过的内容
 
-### 5.1 单元测试：151 项，全部通过
+### 5.1 单元测试：155 项，全部通过
 
 | 测试类 | 项数 | 覆盖 |
 |---|---:|---|
@@ -159,7 +159,8 @@ docs/                           protocol.md（协议规格）、release.md（发
 | `ble.BleRunPolicyTest` | 7 | 什么时候广播、什么时候扫描 |
 | `identity.IdentityTest` | 5 | GUID ⇄ 16 字节 |
 | `meeting.MeetingDebouncerTest` | 5 | 同一个人 10 秒内只算一次 |
-| `exchange.ExchangeModeStateTest` | 4 | NFC 出示／读取与蓝牙互斥，离开主页后关闭 |
+| `exchange.ExchangeModeStateTest` | 4 | NFC 出示／读取与蓝牙互斥，退出前台交换会话后关闭 |
+| `ui.ContactDateTest` | 4 | 紧凑日期、时区、跨午夜与跨年显示 |
 
 ### 5.2 真机验证（一部 Samsung Galaxy S23 Ultra，Android 16，必要时用电脑蓝牙当"另一台设备"）
 
