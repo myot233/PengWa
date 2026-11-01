@@ -260,6 +260,15 @@ docs/                           protocol.md（协议规格）、release.md（发
 apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
 ```
 
+### 持续集成
+
+GitHub Actions 会在向 `main` 推送、提交或更新 PR 时构建 Debug APK 并运行单元测试，也可以在
+Actions 页手动运行 `Build and test`。CI 使用 JDK 21 和仓库内的 Gradle Wrapper，自动安装所需的 Android SDK。
+
+成功后可在该次运行的 Artifacts 中下载 `pengwa-debug-apk`；单元测试报告 `unit-test-reports` 在测试失败时也会上传
+（前提是已生成报告）。两类产物均保留 14 天。
+CI 调试包使用临时调试签名，跨次运行的 APK 可能无法覆盖安装；卸载旧调试版会清除该调试版的本地数据。
+
 ---
 
 ## 8. 后续计划
