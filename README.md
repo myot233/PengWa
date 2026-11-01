@@ -261,23 +261,44 @@ docs/                           protocol.md（协议规格）、release.md（发
 apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
 ```
 
-### Compose Preview
+### Compose Preview 与命令行图片
 
 在 Android Studio 中选择 `debug` 构建变体，打开
 `app/src/debug/kotlin/app/pengwa/ui/UiPreviews.kt`，切换到 **Split / Design** 并执行 **Build & Refresh**。
-预览复用应用的界面组件，示例数据只编入调试版，不需要手机、NFC、蓝牙权限、数据库或相机。
+也可以只安装 JDK 21 和 Android SDK（platform 37、build-tools 36），通过命令行生成 PNG，无需 Studio、真机或模拟器：
 
-- `NfcPagePreview`：出示、读取、NFC 未开启、不支持 NFC；交互预览中可以切换角色。
-- `BluetoothPagePreview`：未授权、权限被拒绝、蓝牙关闭、搜索中，以及发现／就绪／申请／等待／成功／失败的列表项。
-- `ContactsScreenPreview`：空集邮册、长名字和相遇次数、可滚动的列表，包含拍照按钮。
-- `QrPagePreview`：使用固定测试身份生成二维码，扫码按钮为空操作。
+```bash
+bash scripts/render-previews.sh
+```
 
-每个场景提供浅色、深色和 320dp 窄屏／1.5 倍字体三种配置；主题关闭动态取色，便于比较。
-场景较多时可切换到 **Focus** 模式，只渲染当前需要的预览。除 NFC 角色切换和列表滚动外，操作回调均为空，
-不会打开系统设置、申请权限、交换名片或启动相机。
+该命令调用 AGP 9.5 的官方 Compose Screenshot Test Suite，重新渲染图片，再生成
+`app/build/preview-gallery/index.html`、`manifest.json` 和 PNG。浏览器直接打开 `index.html` 即可查看，点击图片可放大。
+原始测试报告位于 `app/build/reports/tests/updateDebugScreenshotTestDefaultTestSuite/index.html`。
+首次运行会下载官方 Layoutlib 运行时；截图功能使用 `0.0.1-alpha16` 引擎，目前仍是实验功能。
 
-新增预览时优先调用接收状态和回调的 `*Content` 组件；硬件查询、权限、ViewModel 和生命周期处理保留在外层页面。
-Preview 用于检查界面状态和布局；真实 NFC／蓝牙交换与相机识别仍需运行应用验证。
+预览与截图测试复用同一份界面组件和固定示例数据，覆盖 39 个图片组合：
+
+- NFC：出示、读取、NFC 未开启、不支持 NFC。
+- 蓝牙：未授权、权限被拒绝、蓝牙关闭、搜索中，以及发现／就绪／申请／等待／成功／失败的列表项。
+- 集邮册：空集邮册、长名字和相遇次数、可滚动的列表，包含拍照按钮。
+- 二维码：固定测试身份生成的二维码。
+
+每个场景都有浅色、深色和 320dp 窄屏／1.5 倍字体配置。示例数据仅进入 debug 和截图测试编译产物；
+预览不查询真实硬件、数据库或权限，不会打开相机或交换名片。新增场景时调用接收状态和回调的 `*Content` 组件，
+硬件与生命周期处理保留在外层页面。截图包装入口在 `app/src/screenshotTest/kotlin/app/pengwa/ui/UiScreenshotPreviews.kt`。
+
+### PR 图片附录
+
+`Compose Previews` Action 在 PR 更新时运行并上传 `compose-previews` 附件，包含完整 PNG 和离线 HTML 图集，保留 30 天。
+`Compose Preview Comment` Action 在渲染成功后，将 PNG 发布到专用的 `compose-preview-images` 分支，
+使用固定提交地址将图片内嵌在 PR 评论中，并附上原图集下载和渲染任务链接。后续提交更新同一条机器人评论。
+
+渲染工作流只有读取权限。发表评论的工作流只运行默认分支中的发布代码，核对当前 PR 提交与图片附件来源，
+只发布 PNG，不执行 PR 附件中的脚本或 HTML。适用于 fork PR，无需新增 PAT 或第三方图床。
+
+**首次启用：发表评论的 `workflow_run` 工作流必须先合入仓库默认分支。** 在此之前，PR 可以运行渲染并下载附件，
+自动图片评论会在合并后的后续 PR／提交上启用；本次初始化的图片可由维护者先发布。
+Layoutlib 图片用于检查静态界面，不能替代 `AGENTS.md` 要求的运行中应用截图，真实 NFC／蓝牙与相机行为仍需运行应用验证。
 
 ---
 
